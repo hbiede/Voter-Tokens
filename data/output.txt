@@ -1,0 +1,43 @@
+--------------------
+2020-03-17 23:06:18 -0500
+--------------------
+
+President
+	Drake:                  6 votes
+	Hundter:               11 votes
+--------------------
+	Total:                 17 votes
+
+VP
+	Ethan:                  6 votes
+	Grady:                 11 votes
+--------------------
+	Total:                 17 votes
+
+Sec
+	Megan:                  6 votes
+	Maxwell:               11 votes
+--------------------
+	Total:                 17 votes
+
+Treasurer
+	Connor:                 6 votes
+	Cole:                  11 votes
+--------------------
+	Total:                 17 votes
+
+Reporter
+	Sadie:                  6 votes
+	Emily:                 11 votes
+--------------------
+	Total:                 17 votes
+
+Historian
+	Hannah:                11 votes
+	Abstained:              6 votes
+--------------------
+	Total:                 17 votes
+
+
+
+
