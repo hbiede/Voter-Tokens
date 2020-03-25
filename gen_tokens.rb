@@ -36,7 +36,7 @@ end
 # @param [Array<Hash<Integer, String>>] all_tokens
 def process_chapter(line, column, all_tokens)
   org = line[column[:Org]]
-  (0..line[column[:Delegates]].to_i).each do
+  (0..line[column[:Delegates]].to_i - 1).each do
     # gen tokens and push to the csv
     all_tokens.push({ 0 => org, 1 => gen_token(all_tokens) })
   end
