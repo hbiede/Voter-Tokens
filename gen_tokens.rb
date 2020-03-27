@@ -6,6 +6,9 @@
 
 require 'csv'
 
+# Whether or not to generate PDFs
+generate_pdfs = true
+
 # noinspection SpellCheckingInspection
 CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPASDFGHJKLZXCVBNM23456789'.scan(/\w/)
 
@@ -20,25 +23,29 @@ def random_string(length)
 end
 
 # @private
-# @param [Array<Hash<Integer, String>>] all_tokens The tokens already generated,
+# @param [Hash<String, Array<String>>] all_tokens The tokens already generated,
 # used to prevent duplicates
 def gen_token(all_tokens)
   new_token = ''
   loop do
     new_token = random_string(TOKEN_LENGTH)
-    break unless all_tokens.any? { |_, token| token.equal?(new_token) }
+    break unless all_tokens.value?(new_token)
   end
   new_token
 end
 
 # @param [CSV::Row|Enumerator] line The elements from this line to be processed
 # @param [Hash<Integer>] column The columns containing pertinent info
-# @param [Array<Hash<Integer, String>>] all_tokens
+# @param [Hash<String, Array<String>>] all_tokens
 def process_chapter(line, column, all_tokens)
   org = line[column[:Org]]
   (0...line[column[:Delegates]].to_i).each do
     # gen tokens and push to the csv
-    all_tokens.push({ 0 => org, 1 => gen_token(all_tokens) })
+    if all_tokens.include?(org)
+      all_tokens.fetch(org).push(gen_token(all_tokens))
+    else
+      all_tokens.store(org, [gen_token(all_tokens)])
+    end
   end
 end
 
@@ -61,8 +68,8 @@ rescue Errno::ENOENT
 end
 lines.delete_if { |line| line =~ /^\s*$/ } # delete blank lines
 
-# @type [Array<Hash<Integer, String>>]
-all_tokens = []
+# @type [Hash<String, Array<String>>]
+all_tokens = {}
 # index of our two key columns (all other columns are ignored)
 # @type [Hash<Integer>]
 column = { Org: 0, Delegates: 0 }
@@ -91,7 +98,28 @@ end
 
 CSV.open(ARGV[1], 'w') do |f|
   f << %w[Organization Token]
-  all_tokens.each do |line|
-    f << [line[0], line[1]]
+  all_tokens.each do |org, org_passwords|
+    org_passwords.each do |password|
+      f << [org, password]
+    end
   end
+end
+
+if generate_pdfs
+  tex_file = IO.read('pdfs/voting.tex')
+  all_tokens.each do |org, org_passwords|
+    password_text = ''
+    org_passwords.each do |password|
+      password_text += password + " \\\\\n"
+    end
+    org_tex = tex_file.clone
+    org_tex['REPLACESCHOOL'] = org
+    org_tex['REPLACEPW'] = password_text
+    pdf_name = org.gsub(/\s/, '') + '.tex'
+    File.open(pdf_name, 'w') { |f| f.write(org_tex) }
+    system('lualatex ' + pdf_name)
+  end
+
+  system('rm *.out *.aux *.log *.tex')
+  system('mv *.pdf pdfs/')
 end
