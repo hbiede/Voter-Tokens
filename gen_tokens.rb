@@ -115,9 +115,11 @@ if generate_pdfs
     org_tex = tex_file.clone
     org_tex['REPLACESCHOOL'] = org
     org_tex['REPLACEPW'] = password_text
-    pdf_name = org.gsub(/\s/, '') + '.tex'
+    pdf_name = org.gsub(/[\s\(\)\.#!]/, '') + '.tex'
     File.open(pdf_name, 'w') { |f| f.write(org_tex) }
-    system('lualatex ' + pdf_name)
+    system('lualatex ' + pdf_name + ' > /dev/null')
+    system('lualatex ' + pdf_name + ' > /dev/null')
+    print('Tokens and PDF generated for ' + org + "\n")
   end
 
   system('rm *.out *.aux *.log *.tex')
