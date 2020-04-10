@@ -6,9 +6,11 @@
 
 require 'csv'
 
-
+# Generate a formatted string of a single ballot entry
+#
 # @param [String] candidate_name The name of the candidate
 # @param [Integer] votes The number of votes they received
+# @return [String] a formatted string of a single ballot entry
 def ballot_entry_string(candidate_name, votes, percent)
   if percent > 50
     majority_mark = '*'
@@ -20,9 +22,12 @@ def ballot_entry_string(candidate_name, votes, percent)
          S: votes != 1 ? 's' : '', MajoriyMarker: majority_mark, Per: percent)
 end
 
+# Generate a formatted string of the number of abstention votes cast
+#
 # @param [Integer] vote_count The number of total votes cast (including
 #   abstentions)
 # @param [Integer] position_vote_count The number of votes cast for candidates
+# @return [String] the number of abstention votes cast
 def abstention_count_string(vote_count, position_vote_count)
   abstained = vote_count - position_vote_count
   if abstained.positive?
@@ -35,10 +40,13 @@ def abstention_count_string(vote_count, position_vote_count)
   return_string
 end
 
+# Generate the vote report for a single position
+#
 # @param [Integer] vote_count The number of total votes cast in the election
 # @param [String] position_title The name of the position being sought after
 # @param [Hash<String, Integer>] position_vote_record A mapping of candidate
 #   names onto the number of votes they received
+# @return [String] the vote report for a single position
 def position_report(vote_count, position_title, position_vote_record)
   return_string = ''
   pos_total = 0
@@ -63,12 +71,14 @@ def position_report(vote_count, position_title, position_vote_record)
          MajorityReached: majority_reached_string) + return_string
 end
 
+# Generate a the overall vote report
+#
 # @param [Integer] vote_count The number of valid votes cast
 # @param [Array[String]] column_headers A listing of the column headers from the
 #   CSV (with 0 being the token)
 # @param [Hash<String, Hash<String,Integer>>] vote_counts The mapping of a
 #   position to a set of votes
-# @return The vote report
+# @return [String] the vote report
 def vote_report(vote_count, column_headers, vote_counts)
   return_string = ''
   vote_counts.each_pair do |key, position_vote_record|
