@@ -101,9 +101,11 @@ CSV.open(ARGV[1], 'w') do |f|
   all_tokens.each do |org, org_passwords|
     org_passwords.each do |password|
       f << [org, password]
+      puts 'Token generated for ' + org + "\n"
     end
   end
 end
+puts format("%<TokenCount>d tokens generated", TokenCount: all_tokens.length)
 
 if generate_pdfs
   tex_file = IO.read('pdfs/voting.tex')
@@ -119,9 +121,10 @@ if generate_pdfs
     File.open(pdf_name, 'w') { |f| f.write(org_tex) }
     system('lualatex ' + pdf_name + ' > /dev/null')
     system('lualatex ' + pdf_name + ' > /dev/null')
-    print('Tokens and PDF generated for ' + org + "\n")
+    puts format("PDF generated for %<Org>s\n", Org: org)
   end
 
   system('rm *.out *.aux *.log *.tex')
   system('mv *.pdf pdfs/')
+  puts format("%<TokenCount>d PDFs generated", TokenCount: all_tokens.length)
 end
