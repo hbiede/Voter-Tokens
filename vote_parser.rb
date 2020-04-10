@@ -9,10 +9,15 @@ require 'csv'
 
 # @param [String] candidate_name The name of the candidate
 # @param [Integer] votes The number of votes they received
-def ballot_entry_string(candidate_name, votes)
-  format("\t%<Name>-20s %<Votes>4d vote%<S>s\n",
+def ballot_entry_string(candidate_name, votes, majority = false)
+  if majority
+    majority_mark = '*'
+  else
+    majority_mark = ''
+  end
+  format("\t%<MajoriyMarker>1s%<Name>-20s %<Votes>4d vote%<S>s\n",
          Name: candidate_name + ':', Votes: votes,
-         S: votes != 1 ? 's' : '')
+         S: votes != 1 ? 's' : '', MajoriyMarker: majority_mark)
 end
 
 # @param [Integer] vote_count The number of total votes cast (including
@@ -35,17 +40,27 @@ end
 # @param [Hash<String, Integer>] position_vote_record A mapping of candidate
 #   names onto the number of votes they received
 def position_report(vote_count, position_title, position_vote_record)
-  return_string = format("%<PositionTitle>s\n", PositionTitle: position_title)
+  return_string = ''
   pos_total = 0
-  position_vote_record.each_pair do |candidate, votes|
-    return_string += ballot_entry_string(candidate.to_s, votes)
+  majority_reached = false
+
+  # sort the positions by votes received in decending order
+  position_vote_record.sort_by { |candidate, votes| -votes }.to_h.each_pair do |candidate, votes|
+    majority = votes > (vote_count / 2 + 1).floor()
+    majority_reached |= majority
+    return_string += ballot_entry_string(candidate.to_s, votes, majority)
     pos_total += votes
   end
-  return_string += abstention_count_string(vote_count, pos_total) + '-' * 20
-
-  return_string + format("\n\t%<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
-                         Title: 'Total:', TotalVotes: vote_count,
-                         S: pos_total != 1 ? 's' : '')
+  return_string += abstention_count_string(vote_count, pos_total) + '-' * 40
+  return_string += format("\n\t%<Title>-20s %<TotalVotes>5d vote%<S>s\n\n",
+                          Title: 'Total:', TotalVotes: vote_count,
+                          S: pos_total != 1 ? 's' : '')
+  majority_reached_string = ' (No Majority Reached)'
+  if majority_reached
+    majority_reached_string = ''
+  end
+  format("%<PositionTitle>s%<MajorityReached>s\n", PositionTitle: position_title,
+         MajorityReached: majority_reached_string) + return_string
 end
 
 # @param [Integer] vote_count The number of valid votes cast
