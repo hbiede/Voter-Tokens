@@ -85,7 +85,7 @@ lines.each do |line|
 
     # find the column with a header containing the keywords - non-case sensitive
     column[:Org] = line.find_index do |token|
-      token.match(/(school)|(organization)|(chapter)/i)
+      token.match(/(schools?)|(organizations?)|(chapters?)|(names?)/i)
     end
 
     column[:Delegates] = line.find_index do |token|
