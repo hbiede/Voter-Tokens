@@ -78,6 +78,43 @@ def vote_report(vote_count, column_headers, vote_counts)
   return_string
 end
 
+# Count the number of votes in each position
+#
+# @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
+# @return the vote counts for each position
+def generate_vote_totals(votes)
+  vote_counts = {}
+  used_tokens = []
+  warning = ''
+  votes.reverse.each do |vote|
+    if vote[0] =~ token_regex
+      if used_tokens.include?(vote[0])
+        warning += format("%<VoterID>s voted twice ignoring the first\n",
+                          VoterID: vote[0])
+      else
+        used_tokens.push(vote[0])
+        # token hasn't been used. count votes
+        (1..vote.length - 1).each do |position|
+          next if vote[position].nil? || vote[position].empty?
+
+          vote_counts.store(position, {}) unless vote_counts.include?(position)
+
+          if vote_counts[position].include?(vote[position])
+            vote_counts[position][vote[position]] += 1
+          else
+            vote_counts[position].store(vote[position], 1)
+          end
+        end
+      end
+    else
+      warning += format("%<VoteToken>s is an invalid token. Vote not Counted\n",
+                        VoteToken: vote[0])
+    end
+  end
+  warn warning
+  vote_counts
+end
+
 # print help if no arguments are given or help is requested
 if ARGV.length < 2 || ARGV[0] == '--help'
   error_message = 'Usage: ruby %s [VoteInputFileName] [TokenInputFileName]'
@@ -116,37 +153,9 @@ column_headers = votes.first
 votes.delete_at(0)
 
 # @type [Hash<String, Hash<String,Integer>>]
-vote_counts = {}
-used_tokens = []
-warning = ''
-votes.reverse.each do |vote|
-  if vote[0] =~ token_regex
-    if used_tokens.include?(vote[0])
-      warning += format("%<VoterID>s voted twice ignoring the first\n",
-                        VoterID: vote[0])
-    else
-      used_tokens.push(vote[0])
-      # token hasn't been used. count votes
-      (1..vote.length - 1).each do |position|
-        next if vote[position].nil? || vote[position].empty?
-
-        vote_counts.store(position, {}) unless vote_counts.include?(position)
-
-        if vote_counts[position].include?(vote[position])
-          vote_counts[position][vote[position]] += 1
-        else
-          vote_counts[position].store(vote[position], 1)
-        end
-      end
-    end
-  else
-    warning += format("%<VoteToken>s is an invalid token. Vote not Counted\n",
-                      VoteToken: vote[0])
-  end
-end
-
-warn warning
+vote_counts = generate_vote_totals(votes)
 election_report = vote_report(used_tokens.length, column_headers, vote_counts)
+
 unless ARGV[2].nil?
   File.write(ARGV[2], ('-' * 20) + "\n" + Time.now.to_s + "\n" +
       ('-' * 20) + "\n" + warning + "\n" + election_report + "\n\n\n",
