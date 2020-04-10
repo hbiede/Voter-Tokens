@@ -4,7 +4,7 @@ and then validate those tokens when counting votes
 
 ## How-To
 
-###Requirements
+### Requirements
  - [Ruby](https://www.ruby-lang.org/en/)
  - [GNU Make](https://www.gnu.org/software/make/) (optional but recommended)
 
