@@ -91,8 +91,10 @@ end
 # Count the number of votes in each position
 #
 # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
-# @return the vote counts for each position
-def generate_vote_totals(votes)
+# @param [Regexp] token_regex a regex expression to determine the validity of
+#   a given token
+# @return [Hash] the vote counts for each position
+def generate_vote_totals(votes, token_regex)
   vote_counts = {}
   used_tokens = []
   warning = ''
@@ -122,7 +124,7 @@ def generate_vote_totals(votes)
     end
   end
   warn warning
-  vote_counts
+  { :VoteCounts => vote_counts, :VoteTotal => used_tokens.length }
 end
 
 # print help if no arguments are given or help is requested
@@ -162,9 +164,8 @@ token_regex = /#{tokens.map { |token| Regexp.escape(token[1]) }.join("|")}/
 column_headers = votes.first
 votes.delete_at(0)
 
-# @type [Hash<String, Hash<String,Integer>>]
-vote_counts = generate_vote_totals(votes)
-election_report = vote_report(used_tokens.length, column_headers, vote_counts)
+vote_report = generate_vote_totals(votes, token_regex)
+election_report = vote_report(vote_report[:VoteTotal], column_headers, vote_report[:VoteCounts])
 
 unless ARGV[2].nil?
   File.write(ARGV[2], ('-' * 20) + "\n" + Time.now.to_s + "\n" +
