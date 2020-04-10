@@ -101,7 +101,7 @@ votes.delete_if { |line| line =~ /^\s*$/ } # delete blank lines
 begin
   tokens = CSV.read(ARGV[1])
 rescue Errno::ENOENT
-  warn 'Sorry, the votes file does not exist'
+  warn 'Sorry, the tokens file does not exist'
   exit 1
 end
 tokens.delete_if { |line| line =~ /^\s*$/ } # delete blank lines
