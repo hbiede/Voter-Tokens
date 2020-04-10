@@ -9,15 +9,15 @@ require 'csv'
 
 # @param [String] candidate_name The name of the candidate
 # @param [Integer] votes The number of votes they received
-def ballot_entry_string(candidate_name, votes, majority = false)
-  if majority
+def ballot_entry_string(candidate_name, votes, percent)
+  if percent > 50
     majority_mark = '*'
   else
     majority_mark = ''
   end
-  format("\t%<MajoriyMarker>1s%<Name>-20s %<Votes>4d vote%<S>s\n",
+  format("\t%<MajoriyMarker>1s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
          Name: candidate_name + ':', Votes: votes,
-         S: votes != 1 ? 's' : '', MajoriyMarker: majority_mark)
+         S: votes != 1 ? 's' : '', MajoriyMarker: majority_mark, Per: percent)
 end
 
 # @param [Integer] vote_count The number of total votes cast (including
@@ -43,16 +43,16 @@ def position_report(vote_count, position_title, position_vote_record)
   return_string = ''
   pos_total = 0
   majority_reached = false
+  position_vote_record.each_pair { |candidate, votes| pos_total += votes }
 
   # sort the positions by votes received in decending order
   position_vote_record.sort_by { |candidate, votes| -votes }.to_h.each_pair do |candidate, votes|
-    majority = votes > (vote_count / 2 + 1).floor()
-    majority_reached |= majority
-    return_string += ballot_entry_string(candidate.to_s, votes, majority)
-    pos_total += votes
+    percent = 100.0 * votes / vote_count
+    majority_reached |= percent > 50
+    return_string += ballot_entry_string(candidate.to_s, votes, percent)
   end
-  return_string += abstention_count_string(vote_count, pos_total) + '-' * 40
-  return_string += format("\n\t%<Title>-20s %<TotalVotes>5d vote%<S>s\n\n",
+  return_string += abstention_count_string(vote_count, pos_total) + '-' * 49
+  return_string += format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
                           Title: 'Total:', TotalVotes: vote_count,
                           S: pos_total != 1 ? 's' : '')
   majority_reached_string = ' (No Majority Reached)'
