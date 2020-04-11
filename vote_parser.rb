@@ -101,7 +101,7 @@ def generate_vote_totals(votes, token_regex)
   votes.reverse.each do |vote|
     if vote[0] =~ token_regex
       if used_tokens.include?(vote[0])
-        warning += format("%<VoterID>s voted twice ignoring the first\n",
+        warning += format("%<VoterID>s voted twice. Ignoring the first\n",
                           VoterID: vote[0])
       else
         used_tokens.push(vote[0])
