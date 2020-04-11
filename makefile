@@ -5,4 +5,4 @@ default: countVotes
 # Example URL = https://docs.google.com/spreadsheets/d/DOCUMENT_ID/export?exportFormat=csv&range=B1:G
 countVotes:
 	@curl -s '${URL}' > data/votes.csv
-	ruby vote_parser.rb data/votes.csv data/tokens.csv
+	@ruby vote_parser.rb data/votes.csv data/tokens.csv
