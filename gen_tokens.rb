@@ -12,6 +12,16 @@ generate_pdfs = true
 # noinspection SpellCheckingInspection
 CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPASDFGHJKLZXCVBNM23456789'.scan(/\w/)
 
+# Appologies for the obscenities, but have to prevent these from showing up in
+# the passwords
+SWEAR_PREVENTION_MATCHER = /(fuc?k)|(fag)|(cunt)|(n[i1]g)|(a[s5][s5])|
+                            ([s5]h[i1]t)|(b[i1]a?t?ch)|(c[l1][i1]t)|
+                            (j[i1]zz)|([s5]ex)|([s5]meg)|(d[i1]c?k?)|
+                            (pen[i1][s5])|(pube)|(p[i1][s5][s5])|
+                            (g[o0]d)|(crap)|(b[o0]ne)|(basta)|(ar[s5])|
+                            (ana[l1])|(anu[s5])|(ba[l1][l1])|
+                            (b[l1][o0]w)|(b[o0][o0]b)|([l1]mf?a[o0])/ix
+
 # how many characters to pad
 TOKEN_LENGTH = 7
 
@@ -29,7 +39,8 @@ def gen_token(all_tokens)
   new_token = ''
   loop do
     new_token = random_string(TOKEN_LENGTH)
-    break unless all_tokens.value?(new_token)
+    break unless all_tokens.value?(new_token) ||
+        new_token =~ SWEAR_PREVENTION_MATCHER
   end
   new_token
 end
