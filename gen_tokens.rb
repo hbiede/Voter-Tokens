@@ -10,7 +10,7 @@ require 'csv'
 generate_pdfs = true
 
 # noinspection SpellCheckingInspection
-CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPASDFGHJKLZXCVBNM23456789'.scan(/\w/)
+CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPADFGHJKLZXCVBNM2346789'.scan(/\w/)
 
 # Appologies for the obscenities, but have to prevent these from showing up in
 # the passwords
