@@ -114,9 +114,9 @@ end
 # @return [String] the abstention counts, underline, position totals as a string
 def position_report_totals(vote_count, pos_total)
   abstention_count_string(vote_count, pos_total) + '-' * 49 +
-    format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
-           Title: 'Total:', TotalVotes: vote_count,
-           S: pos_total != 1 ? 's' : '')
+      format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
+             Title: 'Total:', TotalVotes: vote_count,
+             S: pos_total != 1 ? 's' : '')
 end
 
 # Generate the entire report for a given position
@@ -232,10 +232,10 @@ end
 #   position to a set of votes
 # @param [Array<String>] used_tokens A collection of all the tokens already used
 # @param [Array<String>] vote A collection of the individuals receiving votes
+# @return [String] the warning associated with the vote
 def validate_vote(vote_counts, used_tokens, vote)
   if used_tokens.include?(vote[0])
-    format("%<VoterID>s voted multiple times. Using latest.\n",
-           VoterID: vote[0])
+    format("%<ID>s voted multiple times. Using latest.\n", ID: vote[0])
   else
     used_tokens.push(vote[0])
     # token hasn't been used. count votes
@@ -244,6 +244,7 @@ def validate_vote(vote_counts, used_tokens, vote)
 
       parse_single_vote(vote_counts, vote, position)
     end
+    ''
   end
 end
 
@@ -259,12 +260,13 @@ end
 def generate_vote_totals(vote_counts, used_tokens, votes, token_regex)
   warning = ''
   votes.reverse.each do |vote|
-    if vote[0] =~ token_regex
-      validate_vote(vote_counts, used_tokens, vote)
-    else
-      warning += format("%<VoteToken>s is an invalid token. Vote not Counted\n",
+    warning += if vote[0] =~ token_regex
+                 validate_vote(vote_counts, used_tokens, vote)
+
+               else
+                 format("%<VoteToken>s is an invalid token. Vote not Counted\n",
                         VoteToken: vote[0])
-    end
+               end
   end
   warning
 end
