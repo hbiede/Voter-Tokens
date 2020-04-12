@@ -53,8 +53,10 @@ def read_tokens
   tokens
 end
 
-#
-# TODO
+# Create the regular expression for the set of tokens used to be validated
+#   against
+# @param [ArrayArray<<String>>] tokens An array of all the valid tokens
+# @return [Regexp] the regular expressions
 def generate_token_regex(tokens)
   /#{tokens.map { |token| Regexp.escape(token[1]) }.join("|")}/
 end
@@ -114,9 +116,9 @@ end
 # @return [String] the abstention counts, underline, position totals as a string
 def position_report_totals(vote_count, pos_total)
   abstention_count_string(vote_count, pos_total) + '-' * 49 +
-      format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
-             Title: 'Total:', TotalVotes: vote_count,
-             S: pos_total != 1 ? 's' : '')
+    format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
+           Title: 'Total:', TotalVotes: vote_count,
+           S: pos_total != 1 ? 's' : '')
 end
 
 # Generate the entire report for a given position
@@ -262,7 +264,6 @@ def generate_vote_totals(vote_counts, used_tokens, votes, token_regex)
   votes.reverse.each do |vote|
     warning += if vote[0] =~ token_regex
                  validate_vote(vote_counts, used_tokens, vote)
-
                else
                  format("%<VoteToken>s is an invalid token. Vote not Counted\n",
                         VoteToken: vote[0])
