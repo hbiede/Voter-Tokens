@@ -1,43 +1,52 @@
 --------------------
-2020-03-17 23:06:18 -0500
+2020-04-15 23:06:30 -0500
 --------------------
+7GEXYpo voted multiple times. Using latest.
+Uon8eqX voted multiple times. Using latest.
+XtASnt4 voted multiple times. Using latest.
+jEmzgYy voted multiple times. Using latest.
+R8dEJwL voted multiple times. Using latest.
+9sbgdHf voted multiple times. Using latest.
+bCSoi8y voted multiple times. Using latest.
+RNZJGJn voted multiple times. Using latest.
+gsKFaKv voted multiple times. Using latest.
+stwLFFk voted multiple times. Using latest.
+jEmzgYy voted multiple times. Using latest.
+yb47Mdo voted multiple times. Using latest.
 
-President
-	Drake:                  6 votes
-	Hundter:               11 votes
---------------------
-	Total:                 17 votes
 
-VP
-	Ethan:                  6 votes
-	Grady:                 11 votes
---------------------
-	Total:                 17 votes
+President (No Majority)
+	 Candidate A:          132 votes (50.00%)
+	 Candidate F:          132 votes (50.00%)
+-------------------------------------------------
+	 Total:                264 votes
 
-Sec
-	Megan:                  6 votes
-	Maxwell:               11 votes
---------------------
-	Total:                 17 votes
+
+Vice President
+	*Candidate B:          162 votes (61.36%)
+	 Candidate K:          102 votes (38.64%)
+-------------------------------------------------
+	 Total:                264 votes
+
+
+Secretary
+	*Candidate I:          146 votes (55.30%)
+	 Candidate D:           71 votes (26.89%)
+	 Candidate H:           47 votes (17.80%)
+-------------------------------------------------
+	 Total:                264 votes
+
 
 Treasurer
-	Connor:                 6 votes
-	Cole:                  11 votes
---------------------
-	Total:                 17 votes
+	*Candidate D:          140 votes (53.03%)
+	 Candidate J:          124 votes (46.97%)
+-------------------------------------------------
+	 Total:                264 votes
+
 
 Reporter
-	Sadie:                  6 votes
-	Emily:                 11 votes
---------------------
-	Total:                 17 votes
-
-Historian
-	Hannah:                11 votes
-	Abstained:              6 votes
---------------------
-	Total:                 17 votes
-
-
-
+	*Candidate C:          185 votes (70.08%)
+	 Candidate G:           79 votes (29.92%)
+-------------------------------------------------
+	 Total:                264 votes
 
