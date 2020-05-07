@@ -241,7 +241,7 @@ def validate_vote(vote_counts, used_tokens, vote)
   else
     used_tokens.push(vote[0])
     # token hasn't been used. count votes
-    (1..vote.length - 1).each do |position|
+    (1...vote.length).each do |position|
       next if vote[position].nil? || vote[position].empty?
 
       parse_single_vote(vote_counts, vote, position)
