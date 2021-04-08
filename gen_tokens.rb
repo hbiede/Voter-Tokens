@@ -9,6 +9,7 @@ require 'csv'
 # Whether or not to generate PDFs
 generate_pdfs = true
 
+# Regex to match the following alphabet: ^[a-km-zA-HJ-NPRT-Z2-46-9]{7,7}$
 # noinspection SpellCheckingInspection
 CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPADFGHJKLZXCVBNM2346789'.scan(/\w/)
 
