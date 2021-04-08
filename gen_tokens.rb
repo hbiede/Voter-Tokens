@@ -12,7 +12,7 @@ generate_pdfs = true
 # noinspection SpellCheckingInspection
 CHARS = 'qwertyuiopasdfghjkzxcvbnmWERTYUPADFGHJKLZXCVBNM2346789'.scan(/\w/)
 
-# Appologies for the obscenities, but have to prevent these from showing up in
+# Apologies for the obscenities, but have to prevent these from showing up in
 # the passwords
 SWEAR_PREVENTION_MATCHER = /(fuc?k)|(fag)|(cunt)|(n[i1]g)|(a[s5][s5])|
 ([s5]h[i1]t)|(b[i1]a?t?ch)|(c[l1][i1]t)|(j[i1]zz)|([s5]ex)|([s5]meg)|
@@ -207,7 +207,10 @@ def main(generate_pdfs)
 
   parse_organizations(all_tokens, lines)
   write_tokens_to_csv(all_tokens)
-  puts format("%<TokenCount>d tokens generated\n\n", TokenCount: all_tokens.length)
+  puts format("%<TokenSetCount>d token sets generated (%<TokenCount>d total tokens)\n\n",
+              TokenSetCount: all_tokens.length,
+              TokenCount: all_tokens.map { |y| y[1].length if y[1] }.reduce(:+)
+       )
 
   create_pdfs(all_tokens) if generate_pdfs
 end
