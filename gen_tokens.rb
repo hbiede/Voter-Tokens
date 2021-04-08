@@ -75,7 +75,7 @@ def gen_token(all_tokens)
   loop do
     new_token = random_string(TOKEN_LENGTH)
     break unless all_tokens.value?(new_token) ||
-        new_token =~ SWEAR_PREVENTION_MATCHER
+                 new_token =~ SWEAR_PREVENTION_MATCHER
   end
   new_token
 end
@@ -146,7 +146,7 @@ def write_tokens_to_csv(all_tokens)
     all_tokens.each do |org, org_passwords|
       org_passwords.each do |password|
         f << [org, password]
-        puts 'Token generated for ' + org + "\n"
+        puts format('Token generated for %<Org>s\n', Org: org)
       end
     end
   end
@@ -159,11 +159,16 @@ end
 # @param [String] org_tex The contents of the Latex to be written
 def write_latex_to_pdf(org, org_tex)
   # noinspection RegExpRedundantEscape
-  pdf_name = org.gsub(/[\s\(\)\.#!]/, '') + '.tex'
+  pdf_name = format('%<FileName>s.tex', FileName: org.gsub(/[\s().#!]/, ''))
   File.open(pdf_name, 'w') { |f| f.write(org_tex) }
-  system('lualatex ' + pdf_name + ' > /dev/null')
-  system('lualatex ' + pdf_name + ' > /dev/null')
-  system('mv *.pdf pdfs/')
+  output = `lualatex #{pdf_name} 2>&1`
+  result = $CHILD_STATUS.success?
+  if result
+    system(format('lualatex %<File>s > /dev/null', File: pdf_name))
+  else
+    warn output
+    exit 1
+  end
 end
 
 # Create a unique PDF for a singular organization with its passwords and
@@ -192,6 +197,7 @@ def create_pdfs(all_tokens)
     create_org_pdf(tex_file, org, org_passwords)
   end
 
+  system('mv *.pdf pdfs/')
   system('rm *.out *.aux *.log *.tex')
   puts format('%<TokenCount>d PDFs generated', TokenCount: all_tokens.length)
 end
@@ -209,8 +215,7 @@ def main(generate_pdfs)
   write_tokens_to_csv(all_tokens)
   puts format("%<TokenSetCount>d token sets generated (%<TokenCount>d total tokens)\n\n",
               TokenSetCount: all_tokens.length,
-              TokenCount: all_tokens.map { |y| y[1].length if y[1] }.reduce(:+)
-       )
+              TokenCount: all_tokens.map { |y| y[1].length if y[1] }.reduce(:+))
 
   create_pdfs(all_tokens) if generate_pdfs
 end
