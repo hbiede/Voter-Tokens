@@ -147,7 +147,7 @@ def write_tokens_to_csv(all_tokens)
     all_tokens.each do |org, org_passwords|
       org_passwords.each do |password|
         f << [org, password]
-        puts format('Token generated for %<Org>s\n', Org: org)
+        puts format("Token generated for %<Org>s\n", Org: org)
       end
     end
   end
@@ -180,7 +180,7 @@ end
 # @param [Array<String>] org_passwords A collection of passwords for a given
 #   organization
 def create_org_pdf(tex_file, org, org_passwords)
-  password_text = org_passwords.join('\\\\n')
+  password_text = org_passwords.join(" \\\\\n")
   org_tex = tex_file.clone
   org_tex['REPLACESCHOOL'] = org
   org_tex['REPLACEPW'] = password_text
