@@ -86,7 +86,7 @@ def ballot_entry_string(candidate_name, votes, percent)
                     ''
                   end
   format("\t%<MjrMarker>1s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
-         Name: candidate_name + ':', Votes: votes,
+         Name: "#{candidate_name}:", Votes: votes,
          S: votes != 1 ? 's' : '', MjrMarker: majority_mark, Per: percent)
 end
 
@@ -99,13 +99,12 @@ end
 def abstention_count_string(vote_count, position_vote_count)
   abstained = vote_count - position_vote_count
   if abstained.positive?
-    return_string = format("\t%<Title>-20s %<AbsVotes>4d vote%<S>s\n",
-                           Title: 'Abstained:', AbsVotes: abstained,
-                           S: abstained != 1 ? 's' : '')
+    format("\t%<Title>-20s %<AbsVotes>4d vote%<S>s\n",
+           Title: 'Abstained:', AbsVotes: abstained,
+           S: abstained != 1 ? 's' : '')
   else
-    return_string = ''
+    ''
   end
-  return_string
 end
 
 # Generate the abstention counts, underline, position totals as a string
@@ -132,8 +131,7 @@ end
 def position_report_individuals(vote_count, pos_total, position_vote_record)
   return_string = ''
   # sort the positions by votes received in descending order
-  position_vote_record.sort_by { |_candidate, votes| -votes }.to_h.each_pair do
-  |candidate, votes|
+  position_vote_record.sort_by { |_candidate, votes| -votes }.to_h.each_pair do |candidate, votes|
     return_string += ballot_entry_string(candidate.to_s, votes,
                                          100.0 * votes / vote_count)
   end
@@ -175,15 +173,15 @@ end
 # @return [String] the vote report for a single position
 def position_report(vote_count, position_title, position_vote_record)
   pos_total = sum_position_votes(position_vote_record)
-  indiv_report = position_report_individuals(vote_count, pos_total,
-                                             position_vote_record)
+  individual_report = position_report_individuals(vote_count, pos_total,
+                                                  position_vote_record)
   majority_reached_str = if majority_reached?(vote_count, position_vote_record)
                            ''
                          else
                            ' (No Majority)'
                          end
-  format("\n%<Pos>s%<Maj>s\n%<Indivs>s",
-         Pos: position_title, Maj: majority_reached_str, Indivs: indiv_report)
+  format("\n%<Pos>s%<Maj>s\n%<Individuals>s",
+         Pos: position_title, Maj: majority_reached_str, Individuals: individual_report)
 end
 
 # Generate a the overall vote report
@@ -234,10 +232,11 @@ end
 #   position to a set of votes
 # @param [Array<String>] used_tokens A collection of all the tokens already used
 # @param [Array<String>] vote A collection of the individuals receiving votes
+# @param [Hash< => String>] token_mapping The mapping of the token onto a school
 # @return [String] the warning associated with the vote
-def validate_vote(vote_counts, used_tokens, vote)
+def validate_vote(vote_counts, used_tokens, vote, token_mapping)
   if used_tokens.include?(vote[0])
-    format("%<ID>s voted multiple times. Using latest.\n", ID: vote[0])
+    format("%<ID>s (%<School>s) voted multiple times. Using latest.\n", ID: vote[0], School: token_mapping[vote[0]])
   else
     used_tokens.push(vote[0])
     # token hasn't been used. count votes
@@ -256,14 +255,13 @@ end
 #   position to a set of votes
 # @param [Array<String>] used_tokens A collection of all the tokens already used
 # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
-# @param [Regexp] token_regex a regex expression to determine the validity of
-#   a given token
+# @param [Hash< => String>] token_mapping The mapping of the token onto a school
 # @return [String] the warnings generated
-def generate_vote_totals(vote_counts, used_tokens, votes, token_regex)
+def generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
   warning = ''
   votes.reverse.each do |vote|
-    warning += if vote[0] =~ token_regex
-                 validate_vote(vote_counts, used_tokens, vote)
+    warning += if token_mapping.key?(vote[0])
+                 validate_vote(vote_counts, used_tokens, vote, token_mapping)
                else
                  format("%<VoteToken>s is an invalid token. Vote not Counted\n",
                         VoteToken: vote[0])
@@ -280,13 +278,13 @@ def init
   arg_count_validator
   votes = read_votes
   tokens = read_tokens
-  token_regex = generate_token_regex(tokens)
+  token_mapping = tokens.map { |token| [token[1], token[0]] }.to_h
 
   # get the column headers and remove them from the voting pool
   # @type [Hash<Integer => String>]
   column_headers = votes.first
   votes.delete_at(0)
-  { Votes: votes, TokenRegex: token_regex, Cols: column_headers }
+  { Votes: votes, TokenMapping: token_mapping, Cols: column_headers }
 end
 
 # Process the input and count all votes
@@ -294,18 +292,18 @@ end
 # @param [Array<Array<String>>] votes The collection of votes as a 2D array with
 #   rows representing individual ballots and columns representing entries votes
 #   for a given position
-# @param [Regexp] token_regex The regular expression of all valid words
+# @param [Hash< => String>] token_mapping The mapping of the token onto a school
 # @param [Hash<Integer => String>] column_headers The names of the columns, used
 #   as position titles (e.g. 'President' or 'Secretary')
 # @return [Hash< => String>] A collection of the primary output and all warnings
-def process_votes(votes, token_regex, column_headers)
+def process_votes(votes, token_mapping, column_headers)
   # @type [Hash<String => Hash<String,Integer>>]
   vote_counts = {}
 
   # @type [Array<String>]
   used_tokens = []
 
-  warning = generate_vote_totals(vote_counts, used_tokens, votes, token_regex)
+  warning = generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
   election_report = vote_report(used_tokens.length, column_headers, vote_counts)
   { Report: election_report, Warning: warning }
 end
@@ -324,7 +322,7 @@ end
 # Manage the program
 def main
   input = init
-  processed_values = process_votes(input[:Votes], input[:TokenRegex],
+  processed_values = process_votes(input[:Votes], input[:TokenMapping],
                                    input[:Cols])
   output_report(processed_values[:Report], processed_values[:Warning])
 end
