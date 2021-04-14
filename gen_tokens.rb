@@ -193,7 +193,7 @@ end
 # @param [Hash<String => Array<String>>] all_tokens a mapping of organization
 #   names onto their associated passwords
 def create_pdfs(all_tokens)
-  tex_file = IO.read('pdfs/voting.tex')
+  tex_file = IO.read('pdfs/template/voting.tex')
   all_tokens.each do |org, org_passwords|
     create_org_pdf(tex_file, org, org_passwords)
   end
@@ -214,9 +214,10 @@ def main(generate_pdfs)
 
   parse_organizations(all_tokens, lines)
   write_tokens_to_csv(all_tokens)
+  # noinspection RubyNilAnalysis
   puts format("%<TokenSetCount>d token sets generated (%<TokenCount>d total tokens)\n\n",
               TokenSetCount: all_tokens.length,
-              TokenCount: all_tokens.map { |y| y[1].length if y[1] }.reduce(:+))
+              TokenCount: all_tokens.map { |y| y[1].length unless y[1].nil? }.reduce(:+))
 
   create_pdfs(all_tokens) if generate_pdfs
 end

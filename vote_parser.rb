@@ -99,7 +99,7 @@ end
 def abstention_count_string(vote_count, position_vote_count)
   abstained = vote_count - position_vote_count
   if abstained.positive?
-    format("\t%<Title>-20s %<AbsVotes>4d vote%<S>s\n",
+    format("\t %<Title>-20s %<AbsVotes>4d vote%<S>s\n",
            Title: 'Abstained:', AbsVotes: abstained,
            S: abstained != 1 ? 's' : '')
   else

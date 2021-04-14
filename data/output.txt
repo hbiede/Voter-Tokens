@@ -1,52 +1,37 @@
---------------------
-2020-04-15 23:06:30 -0500
---------------------
-7GEXYpo voted multiple times. Using latest.
-Uon8eqX voted multiple times. Using latest.
-XtASnt4 voted multiple times. Using latest.
-jEmzgYy voted multiple times. Using latest.
-R8dEJwL voted multiple times. Using latest.
-9sbgdHf voted multiple times. Using latest.
-bCSoi8y voted multiple times. Using latest.
-RNZJGJn voted multiple times. Using latest.
-gsKFaKv voted multiple times. Using latest.
-stwLFFk voted multiple times. Using latest.
-jEmzgYy voted multiple times. Using latest.
-yb47Mdo voted multiple times. Using latest.
+kxGVjKo (Blair) voted multiple times. Using latest.
+gh7qf4D is an invalid token. Vote not Counted
+WdRu8GB is an invalid token. Vote not Counted
+TbH3snM (Ainsworth) voted multiple times. Using latest.
 
-
-President (No Majority)
-	 Candidate A:          132 votes (50.00%)
-	 Candidate F:          132 votes (50.00%)
+President
+        *Candidate A:          194 votes (99.49%)
+         Abstained:              1 vote
 -------------------------------------------------
-	 Total:                264 votes
+         Total:                195 votes
 
 
 Vice President
-	*Candidate B:          162 votes (61.36%)
-	 Candidate K:          102 votes (38.64%)
+        *Candidate B:          195 votes (100.00%)
 -------------------------------------------------
-	 Total:                264 votes
+         Total:                195 votes
 
 
 Secretary
-	*Candidate I:          146 votes (55.30%)
-	 Candidate D:           71 votes (26.89%)
-	 Candidate H:           47 votes (17.80%)
+        *Candidate C:          144 votes (73.85%)
+         Candidate D:           51 votes (26.15%)
 -------------------------------------------------
-	 Total:                264 votes
+         Total:                195 votes
 
 
 Treasurer
-	*Candidate D:          140 votes (53.03%)
-	 Candidate J:          124 votes (46.97%)
+        *Candidate E:          188 votes (96.41%)
+         Abstained:              7 votes
 -------------------------------------------------
-	 Total:                264 votes
+         Total:                195 votes
 
 
 Reporter
-	*Candidate C:          185 votes (70.08%)
-	 Candidate G:           79 votes (29.92%)
+        *Candidate G:          108 votes (55.38%)
+         Candidate F:           87 votes (44.62%)
 -------------------------------------------------
-	 Total:                264 votes
-
+         Total:                195 votes
