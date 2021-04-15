@@ -1,5 +1,5 @@
 ![CircleCI](https://circleci.com/gh/hbiede/Voter-Tokens.svg?style=svg)
-[![codecov](https://codecov.io/gh/hbiede/Voter-Tokens/branch/master/graph/badge.svg?token=J1FBQ2XOIO)](https://codecov.io/gh/hbiede/Voter-Tokens)
+[![codecov](https://codecov.io/gh/hbiede/Voter-Tokens/graph/badge.svg)](https://codecov.io/gh/hbiede/Voter-Tokens)
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-rubocop-brightgreen.svg)](https://github.com/rubocop/rubocop)
 
 # Voter-Tokens
