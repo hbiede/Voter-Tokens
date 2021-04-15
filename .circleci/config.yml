@@ -1,0 +1,27 @@
+version: 2.1
+orbs:
+  ruby: circleci/ruby@1.1.2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:3.0
+    executor: ruby/default
+    steps:
+      - checkout
+      - ruby/install-deps
+      - ruby/rubocop-check
+      - run:
+          name: Latex Install
+          command: sudo apt-get install texlive-luatex && sudo apt-get install texlive-full
+      - run:
+          name: Run rakefile
+          command: bundle exec rake
+      - store_test_results:
+          path: '.'
+
+workflow:
+  version: 2.1
+  build-test:
+    jobs:
+      - build

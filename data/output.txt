@@ -1,37 +1,40 @@
-kxGVjKo (Blair) voted multiple times. Using latest.
-gh7qf4D is an invalid token. Vote not Counted
-WdRu8GB is an invalid token. Vote not Counted
-TbH3snM (Ainsworth) voted multiple times. Using latest.
+7ZRZkTy is an invalid token. Vote not Counted
+cdAqsmy (Fairbury) voted multiple times. Using latest.
+B8PPBL8 is an invalid token. Vote not Counted
+btJ4hBX is an invalid token. Vote not Counted
+zzcFMhv (Ainsworth) voted multiple times. Using latest.
+zzcFMhv (Ainsworth) voted multiple times. Using latest.
 
 President
-        *Candidate A:          194 votes (99.49%)
+        *Candidate A:          192 votes (99.48%)
          Abstained:              1 vote
 -------------------------------------------------
-         Total:                195 votes
+         Total:                193 votes
 
 
 Vice President
-        *Candidate B:          195 votes (100.00%)
+        *Candidate B:          193 votes (100.00%)
 -------------------------------------------------
-         Total:                195 votes
+         Total:                193 votes
 
 
 Secretary
-        *Candidate C:          144 votes (73.85%)
-         Candidate D:           51 votes (26.15%)
+        *Candidate C:          142 votes (73.58%)
+         Candidate D:           51 votes (26.42%)
 -------------------------------------------------
-         Total:                195 votes
+         Total:                193 votes
 
 
 Treasurer
-        *Candidate E:          188 votes (96.41%)
+        *Candidate E:          186 votes (96.37%)
          Abstained:              7 votes
 -------------------------------------------------
-         Total:                195 votes
+         Total:                193 votes
 
 
 Reporter
-        *Candidate G:          108 votes (55.38%)
-         Candidate F:           87 votes (44.62%)
+        *Candidate G:          106 votes (54.92%)
+         Candidate F:           87 votes (45.08%)
 -------------------------------------------------
-         Total:                195 votes
+         Total:                193 votes
+
