@@ -28,8 +28,14 @@ class TestPDFWriter < Test::Unit::TestCase
     assert_equal("PDF generated for John Adams\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
     assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams\n\\end{document}")
 
+    assert_equal("PDF generated for John Adams\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL, REPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
+    assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams, John Adams\n\\end{document}")
+
     assert_equal("PDF generated for Thomas Jefferson\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW\n\\end{document}", "Thomas Jefferson", ["Password 1", "Password 2"]))
     assert_latex_equal('ThomasJefferson', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2\n\\end{document}")
+
+    assert_equal("PDF generated for Thomas Jefferson 2\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW, REPLACEPW\n\\end{document}", "Thomas Jefferson 2", ["Password 1", "Password 2"]))
+    assert_latex_equal('ThomasJefferson2', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2, Password 1 \\\\\nPassword 2\n\\end{document}")
   end
 
   def test_create_pdfs

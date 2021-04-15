@@ -74,10 +74,14 @@ class PDFWriter
   # @param [Array<String>] org_passwords A collection of passwords for a given
   #   organization
   def self.create_org_pdf(tex_file, org, org_passwords)
-    password_text = org_passwords.join(" \\\\\n")
     org_tex = tex_file.clone
-    org_tex['REPLACESCHOOL'] = org if org_tex.include?('REPLACESCHOOL')
-    org_tex['REPLACEPW'] = password_text if org_tex.include?('REPLACEPW')
+
+    org_tex = org_tex.gsub('REPLACESCHOOL', org)
+
+    # Has to be triple escaped to account for the un-escaping done by ruby, then regex, then latex
+    password_text = org_passwords.join(" \\\\\\\\\n")
+    org_tex = org_tex.gsub('REPLACEPW', password_text)
+
     write_latex_to_pdf(org, org_tex)
     format("PDF generated for %<Org>s\n", Org: org)
   end
