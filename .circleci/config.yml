@@ -15,7 +15,7 @@ jobs:
           name: Latex Install
           command: sudo apt-get install texlive-luatex && sudo apt-get install texlive-full
       - run:
-          name: Run rakefile
+          name: Run unit tests
           command: bundle exec rake
       - store_test_results:
           path: '.'

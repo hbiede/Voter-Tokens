@@ -2,9 +2,8 @@
 
 require 'rake/testtask'
 
-Rake::TestTask.new(:test) do |test|
-  test.pattern = 'tests/*_test.rb'
-  test.verbose = true
+Rake::TestTask.new(:test) do
+  require_relative 'tests/helper'
 end
 
 task default: :test

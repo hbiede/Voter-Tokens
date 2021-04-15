@@ -4,14 +4,17 @@
 # Version: 1.2
 # License:
 
-require 'test/unit'
+require 'test-unit'
 require 'simplecov'
-SimpleCov.start
+SimpleCov.start do
+  add_filter '/tests/'
+end
 
-require_relative '../gen_tokens'
-require_relative '../vote_parser'
+Test::Unit::AutoRunner.run(true, File.dirname(__FILE__))
 
 if ENV['CI'] == 'true'
   require 'codecov'
   SimpleCov.formatter = SimpleCov::Formatter::Codecov
+else
+  SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 end
