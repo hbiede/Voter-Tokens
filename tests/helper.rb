@@ -2,10 +2,14 @@
 
 # Author: Hundter Biede (hbiede.com)
 # Version: 1.2
-# License: MIT
+# License:
+
 require 'test/unit'
 require 'simplecov'
 SimpleCov.start
+
+require_relative '../gen_tokens'
+require_relative '../vote_parser'
 
 if ENV['CI'] == 'true'
   require 'codecov'

@@ -1,7 +1,6 @@
 # Author: Hundter Biede (hbiede.com)
 # Version: 1.2
 # License: MIT
-require_relative '../gen_tokens'
 require_relative './helper'
 
 def assert_latex_equal(file_name, expected_tex)
