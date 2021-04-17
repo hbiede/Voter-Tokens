@@ -125,7 +125,7 @@ class TokenGenerator
   #
   # @param [String] file_name The name of the file
   # @return [Array<Array<String>>]the contents of the given CSV file
-  def self.read_csv(file_name)
+  def self.read_delegate_csv(file_name)
     begin
       # @type [Array<Array<String>>]
       csv = CSV.read(file_name)
@@ -176,15 +176,6 @@ class TokenGenerator
     end
   end
 
-  # Initialize the program
-  #
-  # @return [Array<Array<String>>] the Delegate counts per organization
-  def self.init
-    token_arg_count_validator
-
-    read_csv(ARGV[0])
-  end
-
   # Determines what columns indices contain the organizations and delegate counts
   #
   # @param [Hash<Integer => integer>] columns The mapping to put the columns into
@@ -222,6 +213,18 @@ class TokenGenerator
     end
   end
 
+  # Creates the token generation report string. Sets for which the count is nil or non-positive are not counted
+  #
+  # @param [Hash<String => Array<String>>] all_tokens The mapping into which the tokens were inserted
+  # @return [String] A report of the number of tokens generated and the number of groups they are associated with
+  def self.get_token_count_report(all_tokens)
+    # noinspection RubyNilAnalysis
+    trimmed_tokens = all_tokens.filter { |_, count| !count.nil? && count.length.positive? }
+    format("%<TokenSetCount>d token sets generated (%<TokenCount>d total tokens)\n\n",
+           TokenSetCount: trimmed_tokens.length,
+           TokenCount: trimmed_tokens.map { |_, count| count.length }.reduce(:+))
+  end
+
   # Manage the program
   #
   # @param [Boolean] generate_pdfs True if the program should generate PDFs with
@@ -229,15 +232,13 @@ class TokenGenerator
   def self.main(generate_pdfs)
     # @type [Hash<String => Array<String>>]
     all_tokens = {}
-    lines = init
+    token_arg_count_validator
+    lines = read_delegate_csv ARGV[0]
 
     parse_organizations(all_tokens, lines)
     write_tokens_to_csv(all_tokens, ARGV[1])
-    # noinspection RubyNilAnalysis
-    puts format("%<TokenSetCount>d token sets generated (%<TokenCount>d total tokens)\n\n",
-                TokenSetCount: all_tokens.length,
-                TokenCount: all_tokens.map { |y| y[1].length unless y[1].nil? }.reduce(:+))
 
+    puts get_token_count_report all_tokens
     puts PDFWriter.create_pdfs(all_tokens, IO.read('pdfs/template/voting.tex')) if generate_pdfs
   end
 end

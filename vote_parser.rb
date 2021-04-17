@@ -24,7 +24,7 @@ end
 #
 # @param [String] file_name The name of the file
 # @return [Array<Array<String>>]the contents of the given CSV file
-def read_csv(file_name)
+def read_vote_csv(file_name)
   begin
     # @type [Array<Array<String>>]
     csv = CSV.read(file_name)
@@ -32,7 +32,7 @@ def read_csv(file_name)
     warn format('Sorry, the file %<File>s does not exist', File: file_name)
     exit 1
   end
-  csv.delete_if { |line| line =~ /^\s*$/ } # delete blank lines
+  csv.delete_if { |line| line.join('') =~ /^\s*$/ } # delete blank lines
   csv
 end
 
@@ -40,9 +40,10 @@ end
 class VoteParser
   # Read the contents of the token file
   #
+  # @param [String] file The file to read from
   # @return [Array<Array<String>>]the contents of the token file
-  def self.read_tokens
-    tokens = read_csv(ARGV[1])
+  def self.read_tokens(file)
+    tokens = read_vote_csv file
     tokens.delete_at(0) # remove headers
     tokens
   end
@@ -76,15 +77,15 @@ class VoteParser
   #
   # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
   #   position to a set of votes
-  # @param [Array<String>] used_tokens A collection of all the tokens already used
+  # @param [Hash<String => Boolean>] used_tokens A collection of all the tokens already used
   # @param [Array<String>] vote A collection of the individuals receiving votes
-  # @param [Hash< => String>] token_mapping The mapping of the token onto a school
+  # @param [Hash< => String>] token_mapping The mapping of the token onto a school. Used for validating tokens
   # @return [String] the warning associated with the vote
   def self.validate_vote(vote_counts, used_tokens, vote, token_mapping)
     if used_tokens.include?(vote[0])
       format("%<ID>s (%<School>s) voted multiple times. Using latest.\n", ID: vote[0], School: token_mapping[vote[0]])
     else
-      used_tokens.push(vote[0])
+      used_tokens.store(vote[0], true)
       # token hasn't been used. count votes
       (1...vote.length).each do |position|
         next if vote[position].nil? || vote[position].empty?
@@ -99,9 +100,9 @@ class VoteParser
   #
   # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
   #   position to a set of votes
-  # @param [Array<String>] used_tokens A collection of all the tokens already used
+  # @param [Hash<String => Boolean>] used_tokens A collection of all the tokens already used
   # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
-  # @param [Hash< => String>] token_mapping The mapping of the token onto a school
+  # @param [Hash<String => String>] token_mapping The mapping of the token onto a school
   # @return [String] the warnings generated
   def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
     warning = ''
@@ -118,17 +119,17 @@ class VoteParser
 
   # Get the necessary input processed
   #
+  # @param [String] file The file to read votes from
   # @return [Hash< => Array<String>, Regexp> ] A collection of the votes (Array of
   #   Strings), the token regex, and the column headers (Array of Strings)
-  def self.init
-    vote_arg_count_validator
-    votes = read_csv(ARGV[0])
-    tokens = read_tokens
+  def self.init(vote_file, token_file)
+    votes = read_vote_csv vote_file
+    tokens = read_tokens token_file
     token_mapping = tokens.map { |token| [token[1], token[0]] }.to_h
 
     # get the column headers and remove them from the voting pool
     # @type [Hash<Integer => String>]
-    column_headers = votes.first
+    column_headers = votes.first.nil? ? [] : votes.first
     votes.delete_at(0)
     { Votes: votes, TokenMapping: token_mapping, Cols: column_headers }
   end
@@ -139,18 +140,16 @@ class VoteParser
   #   rows representing individual ballots and columns representing entries votes
   #   for a given position
   # @param [Hash< => String>] token_mapping The mapping of the token onto a school
-  # @param [Hash<Integer => String>] column_headers The names of the columns, used
-  #   as position titles (e.g. 'President' or 'Secretary')
   # @return [Hash< => String>] A collection of the primary output and all warnings
-  def self.process_votes(votes, token_mapping, column_headers)
+  def self.process_votes(votes, token_mapping)
     # @type [Hash<String => Hash<String,Integer>>]
     vote_counts = {}
 
-    # @type [Array<String>]
-    used_tokens = []
+    # @type [Hash<String => Boolean>]
+    used_tokens = {}
 
     warning = generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
-    { ColumnHeaders: column_headers, TotalVoterCount: used_tokens.length, VoteCounts: vote_counts, Warning: warning }
+    { TotalVoterCount: used_tokens.length, VoteCounts: vote_counts, Warning: warning }
   end
 end
 
@@ -158,15 +157,17 @@ end
 class OutputPrinter
   # Write the output of the program to file if a file is given
   #
+  # @param [String?] file The file to write to
   # @param [String] election_report The main body of the report
   # @param [String] warning All warnings printed in the output
-  def self.write_election_report(election_report, warning = '')
-    return if ARGV[2].nil?
+  def self.write_election_report(file, election_report, warning = '')
+    return if file.nil?
 
-    File.write(ARGV[2],
-               format("%<Rule>s\n%<Time>s\n%<Rule>s\n%<Warn>s\n%<Report>s",
+    File.write(file,
+               format("%<Rule>s\n%<Time>s\n%<Rule>s\n%<Warn>s\n%<Report>s\n\n",
                       Rule: ('-' * 20), Time: Time.now.to_s, Warn: warning,
                       Report: election_report), mode: 'a')
+    nil
   end
 
   # Generate a formatted string of a single ballot entry
@@ -178,11 +179,11 @@ class OutputPrinter
     majority_mark = if percent > 50
                       '*'
                     else
-                      ''
+                      ' '
                     end
-    format("\t%<MjrMarker>1s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
+    format("\t%<MjrMarker>s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
            Name: "#{candidate_name}:", Votes: votes,
-           S: votes != 1 ? 's' : '', MjrMarker: majority_mark, Per: percent)
+           S: votes != 1 ? 's' : ' ', MjrMarker: majority_mark, Per: percent)
   end
 
   # Generate a formatted string of the number of abstention votes cast
@@ -212,7 +213,7 @@ class OutputPrinter
     abstention_count_string(vote_count, pos_total) + '-' * 49 +
       format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
              Title: 'Total:', TotalVotes: vote_count,
-             S: pos_total != 1 ? 's' : '')
+             S: vote_count != 1 ? 's' : '')
   end
 
   # Generate the entire report for a given position
@@ -226,7 +227,7 @@ class OutputPrinter
   def self.position_report_individuals(vote_count, pos_total, position_vote_record)
     return_string = ''
     # sort the positions by votes received in descending order
-    position_vote_record.sort_by { |_candidate, votes| -votes }.to_h.each_pair do |candidate, votes|
+    position_vote_record.sort_by { |candidate, votes| [-votes, candidate] }.to_h.each_pair do |candidate, votes|
       return_string += ballot_entry_string(candidate.to_s, votes,
                                            100.0 * votes / vote_count)
     end
@@ -252,6 +253,8 @@ class OutputPrinter
   #   names onto the number of votes they received
   # @return [Boolean] true iff a majority was reached
   def self.majority_reached?(vote_count, position_vote_record)
+    return false if vote_count.zero?
+
     majority_reached = false
     position_vote_record.each_pair do |_candidate, votes|
       majority_reached |= 100.0 * votes / vote_count > 50
@@ -296,27 +299,29 @@ class OutputPrinter
     return_string
   end
 
-  # Writes the primary and error output to the standard out as well as a file (if
-  #   applicable)
+  # Write the output to the console, and optionally to a file
   #
-  # @param [String] election_report The primary output
-  # @param [String] warning All warnings generated in the process
-  def self.output_report(election_report, warning = '')
-    write_election_report(election_report, warning)
+  # @param [String] election_report The vote report
+  # @param [String?] warning Potential warnings
+  # @param [String?] file The optional file to which to write the output
+  def self.write_output(election_report, warning, file)
     warn warning unless warning.empty?
-    election_report
+    puts election_report
+    OutputPrinter.write_election_report(file, election_report, warning)
   end
 end
 
 # Manage the program
 def main
-  input = VoteParser.init
-  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping],
-                                              input[:Cols])
-  puts OutputPrinter.output_report(
-    OutputPrinter.vote_report(processed_values[:TotalVoterCount], processed_values[:ColumnHeaders],
-                              processed_values[:VoteCounts]), processed_values[:Warning]
+  vote_arg_count_validator
+  input = VoteParser.init(ARGV[0], ARGV[1])
+  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping])
+  election_report = OutputPrinter.vote_report(
+    processed_values[:TotalVoterCount],
+    input[:Cols],
+    processed_values[:VoteCounts]
   )
+  OutputPrinter.write_output(election_report, processed_values[:Warning], ARGV[2])
 end
 
 main if __FILE__ == $PROGRAM_NAME

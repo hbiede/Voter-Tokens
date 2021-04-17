@@ -8,6 +8,7 @@ require 'test-unit'
 require 'simplecov'
 SimpleCov.start do
   add_filter '/tests/'
+  enable_coverage :branch
 end
 
 Test::Unit::AutoRunner.run(true, File.dirname(__FILE__))

@@ -18,6 +18,7 @@ def assert_latex_equal(file_name, expected_tex)
   end
 end
 
+#noinspection RubyResolve
 class TestPDFWriter < Test::Unit::TestCase
   def test_write_latex_to_pdf
     PDFWriter.write_latex_to_pdf('George Washington', "\\documentclass{article}\\begin{document}Empty\\end{document}")
@@ -57,6 +58,7 @@ class TestPDFWriter < Test::Unit::TestCase
   end
 end
 
+#noinspection RubyResolve
 class TestTokenGenerator < Test::Unit::TestCase
   def test_write_tokens_to_csv
     csv_file = "test_tokens.csv"
@@ -80,12 +82,13 @@ class TestTokenGenerator < Test::Unit::TestCase
     File.delete(csv_file)
   end
 
-  def test_read_csv
+  def test_read_delegate_csv
     csv_file = "test_tokens.csv"
     TokenGenerator.write_tokens_to_csv({
                                            George: %w[1 2 3],
                                            John: %w[4 5 6],
                                            Thomas: %w[7 8 9],
+                                           James: []
                                        }, csv_file)
     assert_equal([
                      %w[Organization Token],
@@ -98,11 +101,11 @@ class TestTokenGenerator < Test::Unit::TestCase
                      %w[Thomas 7],
                      %w[Thomas 8],
                      %w[Thomas 9],
-                 ], TokenGenerator.read_csv(csv_file))
+                 ], TokenGenerator.read_delegate_csv(csv_file))
     File.delete(csv_file)
 
     begin
-      TokenGenerator.read_csv("fake_csv.csv")
+      TokenGenerator.read_delegate_csv("fake_csv.csv")
     rescue SystemExit
       assert_true true
     else
@@ -211,5 +214,17 @@ class TestTokenGenerator < Test::Unit::TestCase
     else
       assert_false true
     end
+  end
+
+  def test_get_token_count_report
+    assert_equal("3 token sets generated (9 total tokens)\n\n", TokenGenerator.get_token_count_report(
+        {
+            George: %w[1 2 3],
+            John: %w[4 5 6],
+            Thomas: %w[7 8 9],
+            James: nil,
+            James2: [],
+        }
+    ))
   end
 end
