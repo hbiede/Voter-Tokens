@@ -50,6 +50,10 @@ class TestPDFWriter < Test::Unit::TestCase
       assert_true(File.exist? "pdfs/JamesMadison.pdf")
       assert_true(File.exist? "pdfs/JamesMonroe.pdf")
       assert_true(File.exist? "pdfs/JohnQAdams.pdf")
+      assert_false(File.exist? "pdfs/JohnQAdams.aux")
+      assert_false(File.exist? "pdfs/JohnQAdams.log")
+      assert_false(File.exist? "pdfs/JohnQAdams.out")
+      assert_false(File.exist? "pdfs/JohnQAdams.tex")
     ensure
       File.delete "pdfs/JamesMonroe.pdf"
       File.delete "pdfs/JamesMadison.pdf"
