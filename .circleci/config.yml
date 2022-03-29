@@ -5,9 +5,10 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/ruby:3.0
+      - image: jruby:9.3
     executor: ruby/default
     steps:
+      - run: sudo apt-get update && sudo apt-get install -y git sudo tar
       - checkout
       - ruby/install-deps
       - ruby/rubocop-check
