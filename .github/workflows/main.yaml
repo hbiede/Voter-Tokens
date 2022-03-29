@@ -1,0 +1,38 @@
+name: Test and Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ruby-version: [ '3.0', '2.7', 'head' ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@477b21f02be01bcb8030d50f37cfec92bfa615b6
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+      - name: Install dependencies
+        run: bundle install
+        shell: bash
+      - name: Rubocop Linting
+        run: bundle exec rubocop
+        shell: bash
+      - name: Latex Install
+        run: sudo apt-get install texlive-luatex && sudo apt-get install texlive
+        shell: bash
+      - name: Run tests
+        run: bundle exec rake
+        shell: bash
+      - name: Upload Test Coverage
+        uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b
+        with:
+          directory: ./coverage
