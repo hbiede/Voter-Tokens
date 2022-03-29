@@ -225,6 +225,7 @@ class TokenGenerator
            TokenCount: trimmed_tokens.map { |_, count| count.length }.reduce(:+))
   end
 
+  # :nocov:
   # Manage the program
   #
   # @param [Boolean] generate_pdfs True if the program should generate PDFs with
@@ -244,3 +245,4 @@ class TokenGenerator
 end
 
 TokenGenerator.main generate_pdfs if __FILE__ == $PROGRAM_NAME
+# :nocov:

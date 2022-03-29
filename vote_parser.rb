@@ -311,6 +311,7 @@ class OutputPrinter
   end
 end
 
+# :nocov:
 # Manage the program
 def main
   vote_arg_count_validator
@@ -325,3 +326,4 @@ def main
 end
 
 main if __FILE__ == $PROGRAM_NAME
+# :nocov:
