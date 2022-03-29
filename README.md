@@ -1,4 +1,4 @@
-![CircleCI](https://circleci.com/gh/hbiede/Voter-Tokens.svg?style=svg)
+[![Test and Lint](https://github.com/hbiede/Voter-Tokens/actions/workflows/main.yaml/badge.svg)](https://github.com/hbiede/Voter-Tokens/actions/workflows/main.yaml)
 [![codecov](https://codecov.io/gh/hbiede/Voter-Tokens/graph/badge.svg)](https://codecov.io/gh/hbiede/Voter-Tokens)
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-rubocop-brightgreen.svg)](https://github.com/rubocop/rubocop)
 
