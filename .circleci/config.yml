@@ -13,7 +13,7 @@ jobs:
       - ruby/rubocop-check
       - run:
           name: Latex Install
-          command: sudo apt-get install texlive-luatex && sudo apt-get install texlive-full
+          command: sudo apt-get install texlive-luatex && sudo apt-get install texlive
       - run:
           name: Run unit tests
           command: bundle exec rake
