@@ -110,7 +110,7 @@ class VoteParser
       warning += if token_mapping.key?(vote[0])
                    validate_vote(vote_counts, used_tokens, vote, token_mapping)
                  else
-                   format("%<VoteToken>s is an invalid token. Vote not Counted\n",
+                   format("%<VoteToken>s is an invalid token. Vote not counted.\n",
                           VoteToken: vote[0])
                  end
     end

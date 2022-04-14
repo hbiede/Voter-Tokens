@@ -210,10 +210,10 @@ class TestVoteParser < Test::Unit::TestCase
         VoteParser.generate_vote_totals({}, { 'abc' => true }, [['abc', ''], ['abc', '']], { 'abc' => 'A' })
     )
     assert_equal(
-        "xyz is an invalid token. Vote not Counted\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\n",
+        "xyz is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\n",
         VoteParser.generate_vote_totals({}, { 'abc' => true }, [['abc', ''], ['abc', ''], ['xyz', '']], { 'abc' => 'A' }))
     assert_equal(
-        "xyz is an invalid token. Vote not Counted\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\nxyz2 is an invalid token. Vote not Counted\n",
+        "xyz is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\nxyz2 is an invalid token. Vote not counted.\n",
         VoteParser.generate_vote_totals(
             {},
             { 'abc' => true },
@@ -277,7 +277,7 @@ class TestVoteParser < Test::Unit::TestCase
             'xyz2' => 'X2'
         }
     )
-    assert_equal("fake is an invalid token. Vote not Counted\nabc (A) voted multiple times. Using latest.\n", warning)
+    assert_equal("fake is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\n", warning)
     assert_equal(
         {
             1 => { "AVote3" => 1, 'AVote4' => 5 },
@@ -365,7 +365,7 @@ class TestVoteParser < Test::Unit::TestCase
             'xyz2' => 'X2'
         }
     )
-    assert_equal("fake is an invalid token. Vote not Counted\nabc (A) voted multiple times. Using latest.\n", result[:Warning])
+    assert_equal("fake is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\n", result[:Warning])
     assert_equal(
         {
             1 => { "AVote3" => 1, 'AVote4' => 5 },
