@@ -20,22 +20,56 @@ end
 
 #noinspection RubyResolve
 class TestPDFWriter < Test::Unit::TestCase
+  def test_vote_arg_count_validator
+    assert_nothing_raised do
+      TokenGenerator.token_arg_count_validator %w[data/delegates.csv data/tokens.csv]
+    end
+
+    assert_raises ArgumentError do
+      TokenGenerator.token_arg_count_validator ['data/delegates.csv']
+    end
+
+    assert_raises ArgumentError do
+      TokenGenerator.token_arg_count_validator []
+    end
+
+    assert_raises SystemExit do
+      TokenGenerator.token_arg_count_validator %w[--help]
+    end
+  end
+
+  def test_invalid_headers_warning
+    assert_raises SystemExit do
+      TokenGenerator.invalid_headers_warning
+    end
+  end
+
   def test_write_latex_to_pdf
     PDFWriter.write_latex_to_pdf('George Washington', "\\documentclass{article}\\begin{document}Empty\\end{document}")
     assert_latex_equal("GeorgeWashington", "\\documentclass{article}\\begin{document}Empty\\end{document}")
   end
 
+  def test_print_progress_report
+    assert_equal("\r100.00%% [===============]: PDF generated for John Q Adams   ", PDFWriter.print_progress_report(11, 'John Q Adams', 12, 15))
+    assert_equal("\r25.00%% [====           ]: PDF generated for John Q Adams   ", PDFWriter.print_progress_report(2, 'John Q Adams', 12, 15))
+    assert_equal("\r8.33%% [==             ]: PDF generated for Test           ", PDFWriter.print_progress_report(0, 'Test', 12, 15))
+  end
+
   def test_create_org_pdf
-    assert_equal("PDF generated for John Adams\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
-    assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams\n\\end{document}")
+    begin
+      assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
+      assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams\n\\end{document}")
 
-    assert_equal("PDF generated for John Adams\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL, REPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
-    assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams, John Adams\n\\end{document}")
+      assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL, REPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
+      assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams, John Adams\n\\end{document}")
+    ensure
+      File.delete "pdfs/JohnAdams.pdf"
+    end
 
-    assert_equal("PDF generated for Thomas Jefferson\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW\n\\end{document}", "Thomas Jefferson", ["Password 1", "Password 2"]))
+    assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW\n\\end{document}", "Thomas Jefferson", ["Password 1", "Password 2"]))
     assert_latex_equal('ThomasJefferson', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2\n\\end{document}")
 
-    assert_equal("PDF generated for Thomas Jefferson 2\n", PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW, REPLACEPW\n\\end{document}", "Thomas Jefferson 2", ["Password 1", "Password 2"]))
+    assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW, REPLACEPW\n\\end{document}", "Thomas Jefferson 2", ["Password 1", "Password 2"]))
     assert_latex_equal('ThomasJefferson2', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2, Password 1 \\\\\nPassword 2\n\\end{document}")
   end
 

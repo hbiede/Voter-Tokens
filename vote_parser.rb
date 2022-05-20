@@ -6,20 +6,6 @@
 
 require 'csv'
 
-# Determines if sufficient arguments were given to the program
-#   else, exits
-def vote_arg_count_validator
-  # print help if no arguments are given or help is requested
-  return unless ARGV.length < 2 || ARGV.include?('--help')
-
-  error_message = 'Usage: ruby %s [VoteInputFileName] [TokenInputFileName]'
-  error_message += "\n\tColumn one of votes must be the token (password)"
-  error_message += "\n\tAn optional path to an output file may also be given"
-  error_message += ' to output the report to a text file'
-  warn format(error_message, $PROGRAM_NAME)
-  exit 1
-end
-
 # Read the contents of the given CSV file
 #
 # @param [String] file_name The name of the file
@@ -38,6 +24,24 @@ end
 
 # Parse a vote record
 class VoteParser
+  # Determines if sufficient arguments were given to the program
+  #   else, exits
+  # @param [Array<string>] args The arguments to the program
+  def self.vote_arg_count_validator(args)
+    # print help if no arguments are given or help is requested
+    return unless args.length < 2 || args.include?('--help')
+
+    error_message = 'Usage: ruby %s [VoteInputFileName] [TokenInputFileName]'
+    error_message += "\n\tColumn one of votes must be the token (password)"
+    error_message += "\n\tAn optional path to an output file may also be given"
+    error_message += ' to output the report to a text file'
+    warn format(error_message, $PROGRAM_NAME)
+
+    raise ArgumentError unless args.include?('--help')
+
+    exit 0
+  end
+
   # Read the contents of the token file
   #
   # @param [String] file The file to read from
@@ -50,7 +54,7 @@ class VoteParser
 
   # Adds a new Hash to vote_counts if necessary
   #
-  # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
+  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
   # @param [Integer] position The index of the vote position in vote
   def self.add_position_to_vote_counts(vote_counts, position)
@@ -59,7 +63,7 @@ class VoteParser
 
   # Parses out a single vote and applies its totals to the valid vote counts
   #
-  # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
+  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
   # @param [Array<String>] vote A collection of the individuals receiving votes
   # @param [Integer] position The index of the vote position in vote
@@ -75,11 +79,11 @@ class VoteParser
 
   # Validate an entire ballot and parse out its component votes
   #
-  # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
+  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
-  # @param [Hash<String => Boolean>] used_tokens A collection of all the tokens already used
+  # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array<String>] vote A collection of the individuals receiving votes
-  # @param [Hash< => String>] token_mapping The mapping of the token onto a school. Used for validating tokens
+  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school. Used for validating tokens
   # @return [String] the warning associated with the vote
   def self.validate_vote(vote_counts, used_tokens, vote, token_mapping)
     if used_tokens.include?(vote[0])
@@ -98,11 +102,11 @@ class VoteParser
 
   # Count the number of votes in each position
   #
-  # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
+  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
-  # @param [Hash<String => Boolean>] used_tokens A collection of all the tokens already used
+  # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
-  # @param [Hash<String => String>] token_mapping The mapping of the token onto a school
+  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school
   # @return [String] the warnings generated
   def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
     warning = ''
@@ -120,7 +124,7 @@ class VoteParser
   # Get the necessary input processed
   #
   # @param [String] file The file to read votes from
-  # @return [Hash< => Array<String>, Regexp> ] A collection of the votes (Array of
+  # @return [Hash{Symbol=>Array<Array<String>>,Hash{String}] A collection of the votes (Array of
   #   Strings), the token regex, and the column headers (Array of Strings)
   def self.init(vote_file, token_file)
     votes = read_vote_csv vote_file
@@ -128,7 +132,7 @@ class VoteParser
     token_mapping = tokens.map { |token| [token[1], token[0]] }.to_h
 
     # get the column headers and remove them from the voting pool
-    # @type [Hash<Integer => String>]
+    # @type [Hash{Integer => String}]
     column_headers = votes.first.nil? ? [] : votes.first
     votes.delete_at(0)
     { Votes: votes, TokenMapping: token_mapping, Cols: column_headers }
@@ -139,13 +143,13 @@ class VoteParser
   # @param [Array<Array<String>>] votes The collection of votes as a 2D array with
   #   rows representing individual ballots and columns representing entries votes
   #   for a given position
-  # @param [Hash< => String>] token_mapping The mapping of the token onto a school
-  # @return [Hash< => String>] A collection of the primary output and all warnings
+  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school
+  # @return [Hash{Symbol=>Integer,String,Hash{String}] A collection of the primary output and all warnings
   def self.process_votes(votes, token_mapping)
-    # @type [Hash<String => Hash<String,Integer>>]
+    # @type [Hash{String=> Hash{String=>Integer}}]
     vote_counts = {}
 
-    # @type [Hash<String => Boolean>]
+    # @type [Hash{String => Boolean}]
     used_tokens = {}
 
     warning = generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
@@ -221,7 +225,7 @@ class OutputPrinter
   # @param [Integer] vote_count The number of total votes cast in the election
   # @param [Integer] pos_total The number of votes cast in the election for
   #   positions (does not count abstentions)
-  # @param [Hash<String => Integer>] position_vote_record A mapping of candidate
+  # @param [Hash{String => Integer}] position_vote_record A mapping of candidate
   #   names onto the number of votes they received
   # @return [String] the entire report for a given position
   def self.position_report_individuals(vote_count, pos_total, position_vote_record)
@@ -236,7 +240,7 @@ class OutputPrinter
 
   # Sum the number of votes cast for a position (does not include abstentions)
   #
-  # @param [Hash<String => Integer>] position_vote_record A mapping of candidate
+  # @param [Hash{String => Integer}] position_vote_record A mapping of candidate
   #   names onto the number of votes they received
   # @return [Integer] the number of votes cast for a position (does not include
   #   abstentions)
@@ -249,7 +253,7 @@ class OutputPrinter
   # Determine if a majority has been reached
   #
   # @param [Integer] vote_count The number of total votes cast in the election
-  # @param [Hash<String => Integer>] position_vote_record A mapping of candidate
+  # @param [Hash{String => Integer}] position_vote_record A mapping of candidate
   #   names onto the number of votes they received
   # @return [Boolean] true iff a majority was reached
   def self.majority_reached?(vote_count, position_vote_record)
@@ -266,7 +270,7 @@ class OutputPrinter
   #
   # @param [Integer] vote_count The number of total votes cast in the election
   # @param [String] position_title The name of the position being sought after
-  # @param [Hash<String => Integer>] position_vote_record A mapping of candidate
+  # @param [Hash{String => Integer}] position_vote_record A mapping of candidate
   #   names onto the number of votes they received
   # @return [String] the vote report for a single position
   def self.position_report(vote_count, position_title, position_vote_record)
@@ -287,7 +291,7 @@ class OutputPrinter
   # @param [Integer] vote_count The number of valid votes cast
   # @param [Array[String]] column_headers A listing of the column headers from the
   #   CSV (with 0 being the token)
-  # @param [Hash<String => Hash<String => Integer>>] vote_counts The mapping of a
+  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
   # @return [String] the vote report
   def self.vote_report(vote_count, column_headers, vote_counts)
@@ -305,7 +309,7 @@ class OutputPrinter
   # @param [String?] warning Potential warnings
   # @param [String?] file The optional file to which to write the output
   def self.write_output(election_report, warning, file)
-    warn warning unless warning.empty?
+    warn warning unless warning.nil? || warning.empty?
     puts election_report
     OutputPrinter.write_election_report(file, election_report, warning)
   end
@@ -314,9 +318,12 @@ end
 # :nocov:
 # Manage the program
 def main
-  vote_arg_count_validator
+  VoteParser.vote_arg_count_validator ARGV
   input = VoteParser.init(ARGV[0], ARGV[1])
+  # noinspection RubyMismatchedParameterType
+  # @type [Hash{Symbol=>Integer,String,Hash{String}]
   processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping])
+  # noinspection RubyMismatchedParameterType
   election_report = OutputPrinter.vote_report(
     processed_values[:TotalVoterCount],
     input[:Cols],

@@ -24,27 +24,6 @@ SWEAR_PREVENTION_MATCHER = /(fuc?k)|(fag)|(cunt)|(n[i1]g)|(a[s5][s5])|
 # how many characters to pad
 TOKEN_LENGTH = 7
 
-# Determines if sufficient arguments were given to the program
-#   else, exits
-def token_arg_count_validator
-  # print help if no arguments are given or help is requested
-  return unless ARGV.length < 2 || ARGV[0] == '--help'
-
-  error_message = 'Usage: ruby %s [VoterInputFileName] [TokenOutputFileName]'
-  error_message += "\n\tOne header must contain \"School\", \"Organization\", "
-  error_message += 'or "Chapter"'
-  error_message += "\n\tAnother header must contain \"Delegates\" or \"Votes\""
-  warn format(error_message, $PROGRAM_NAME)
-  exit 1
-end
-
-# Prints a warning about the proper formatting of the CSV before exiting
-def invalid_headers_warning
-  warn 'Invalid CSV:'
-  warn "\n\tHeaders should be \"School\" and \"Delegates\" in any order"
-  exit 1
-end
-
 # Writes tokens to PDFs
 class PDFWriter
   # Compile a unique PDF for a singular organization with its passwords and
@@ -60,9 +39,11 @@ class PDFWriter
     result = $CHILD_STATUS.success?
     if result
       system(format('lualatex %<File>s > /dev/null', File: pdf_name))
+      # :nocov:
     else
       warn output
       exit 1
+      # :nocov:
     end
   end
 
@@ -83,7 +64,18 @@ class PDFWriter
     org_tex = org_tex.gsub('REPLACEPW', password_text)
 
     write_latex_to_pdf(org, org_tex)
-    format("PDF generated for %<Org>s\n", Org: org)
+  end
+
+  # Print a progress report for the token report generation
+  #
+  # @param [Integer] index The index of the current org
+  # @param [String] org The name of the org that was just finished
+  # @param [Integer] number_of_orgs The number of organizations being ran
+  # @param [Integer] longest_org_name_length The length of the longest org name
+  def self.print_progress_report(index, org, number_of_orgs, longest_name_length)
+    percent_done = (index + 1.0) / number_of_orgs
+    format("\r%.2f%%%% [%s%s]: PDF generated for %-#{longest_name_length}s",
+           100 * percent_done, '=' * (15 * percent_done).ceil, ' ' * (15 * (1 - percent_done)).floor, org)
   end
 
   # Create a unique PDF for each organization with its passwords
@@ -93,9 +85,13 @@ class PDFWriter
   # @param [String] tex_file The file contents to print
   # @return [String] The console output for the generation
   def self.create_pdfs(all_tokens, tex_file)
-    all_tokens.each do |org, org_passwords|
-      puts create_org_pdf(tex_file, org, org_passwords)
+    longest_org_name = all_tokens.keys.max_by(&:length).length
+    all_tokens.each_with_index do |(org, org_passwords), i|
+      create_org_pdf(tex_file, org, org_passwords)
+      printf(print_progress_report(i, org, all_tokens.size, longest_org_name))
     end
+    # Clear the progress bar
+    print("\r")
 
     system('mv *.pdf pdfs/')
     system('rm *.out *.aux *.log *.tex')
@@ -105,6 +101,31 @@ end
 
 # Creates a set of tokens
 class TokenGenerator
+  # Determines if sufficient arguments were given to the program
+  #   else, exits
+  # @param [Array<String>] args The arguments to the program
+  def self.token_arg_count_validator(args)
+    # print help if no arguments are given or help is requested
+    return unless args.length < 2 || args[0] == '--help'
+
+    error_message = 'Usage: ruby %s [VoterInputFileName] [TokenOutputFileName]'
+    error_message += "\n\tOne header must contain \"School\", \"Organization\", "
+    error_message += 'or "Chapter"'
+    error_message += "\n\tAnother header must contain \"Delegates\" or \"Votes\""
+    warn format(error_message, $PROGRAM_NAME)
+
+    raise ArgumentError unless args.include?('--help')
+
+    exit 0
+  end
+
+  # Prints a warning about the proper formatting of the CSV before exiting
+  def self.invalid_headers_warning
+    warn 'Invalid CSV:'
+    warn "\n\tHeaders should be \"School\" and \"Delegates\" in any order"
+    exit 1
+  end
+
   # Write all newly generated tokens to CSVs
   #
   # @param [Hash<String => Array<String>>] all_tokens a mapping of organization
@@ -233,7 +254,7 @@ class TokenGenerator
   def self.main(generate_pdfs)
     # @type [Hash<String => Array<String>>]
     all_tokens = {}
-    token_arg_count_validator
+    token_arg_count_validator ARGV
     lines = read_delegate_csv ARGV[0]
 
     parse_organizations(all_tokens, lines)

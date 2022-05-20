@@ -6,6 +6,24 @@ require_relative './helper'
 
 #noinspection RubyResolve
 class TestVoteParser < Test::Unit::TestCase
+  def test_vote_arg_count_validator
+    assert_nothing_raised do
+      VoteParser.vote_arg_count_validator %w[data/votes.csv data/tokens.csv]
+    end
+
+    assert_raises ArgumentError do
+      VoteParser.vote_arg_count_validator ['data/votes.csv']
+    end
+
+    assert_raises ArgumentError do
+      VoteParser.vote_arg_count_validator []
+    end
+
+    assert_raises SystemExit do
+      VoteParser.vote_arg_count_validator %w[--help]
+    end
+  end
+
   def test_read_tokens
     file = 'test_read_tokens.csv'
     CSV.open(file, 'w') do |f|
@@ -379,6 +397,27 @@ end
 
 #noinspection RubyResolve
 class TestOutputPrinter < Test::Unit::TestCase
+  def test_write_output
+    begin
+      OutputPrinter.write_output('REPORT', 'WARNING', nil)
+    rescue
+      assert_true false
+    else
+      assert_true true
+    end
+
+    file_name = 'test_write_election_report.txt'
+    OutputPrinter.write_output(
+      'This is a fake election report that needs to be seen',
+      nil,
+      file_name
+    )
+    file = File.open(file_name)
+    contents = file.read
+    assert_true(contents.match?(/\sThis is a fake election report that needs to be seen\s/m))
+    File.delete file
+  end
+
   def test_write_election_report
     begin
       OutputPrinter.write_election_report(nil, '')
