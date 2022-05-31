@@ -47,23 +47,20 @@ class PDFWriter
     end
   end
 
-  # Create a unique PDF for a singular organization with its passwords and
-  #   moves it to the 'pdfs' directory
+  # Create a the content for a single organization's password PDF
   #
   # @param [String] tex_file The contents of the Latex template
   # @param [String] org The name of the organization
   # @param [Array<String>] org_passwords A collection of passwords for a given
   #   organization
-  def self.create_org_pdf(tex_file, org, org_passwords)
+  def self.create_latex_content(tex_file, org, org_passwords)
     org_tex = tex_file.clone
 
     org_tex = org_tex.gsub('REPLACESCHOOL', org)
 
     # Has to be triple escaped to account for the un-escaping done by ruby, then regex, then latex
     password_text = org_passwords.join(" \\\\\\\\\n")
-    org_tex = org_tex.gsub('REPLACEPW', password_text)
-
-    write_latex_to_pdf(org, org_tex)
+    org_tex.gsub('REPLACEPW', password_text)
   end
 
   # Print a progress report for the token report generation
@@ -87,7 +84,7 @@ class PDFWriter
   def self.create_pdfs(all_tokens, tex_file)
     longest_org_name = all_tokens.keys.max_by(&:length).length
     all_tokens.each_with_index do |(org, org_passwords), i|
-      create_org_pdf(tex_file, org, org_passwords)
+      write_latex_to_pdf(org, create_latex_content(tex_file, org, org_passwords))
       printf(print_progress_report(i, org, all_tokens.size, longest_org_name))
     end
     # Clear the progress bar

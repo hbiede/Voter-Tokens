@@ -55,22 +55,26 @@ class TestPDFWriter < Test::Unit::TestCase
     assert_equal("\r8.33%% [==             ]: PDF generated for Test           ", PDFWriter.print_progress_report(0, 'Test', 12, 15))
   end
 
-  def test_create_org_pdf
-    begin
-      assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
-      assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams\n\\end{document}")
+  def test_create_latex_content
+      assert_equal(
+        PDFWriter.create_latex_content("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]),
+      "\\documentclass{article}\n\\begin{document}\nJohn Adams\n\\end{document}"
+        )
 
-      assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL, REPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]))
-      assert_latex_equal('JohnAdams', "\\documentclass{article}\n\\begin{document}\nJohn Adams, John Adams\n\\end{document}")
-    ensure
-      File.delete "pdfs/JohnAdams.pdf"
-    end
+      assert_equal(
+        PDFWriter.create_latex_content("\\documentclass{article}\n\\begin{document}\nREPLACESCHOOL, REPLACESCHOOL\n\\end{document}", "John Adams", ["Password 1", "Password 2"]),
+      "\\documentclass{article}\n\\begin{document}\nJohn Adams, John Adams\n\\end{document}"
+      )
 
-    assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW\n\\end{document}", "Thomas Jefferson", ["Password 1", "Password 2"]))
-    assert_latex_equal('ThomasJefferson', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2\n\\end{document}")
+      assert_equal(
+      PDFWriter.create_latex_content("\\documentclass{article}\n\\begin{document}\nREPLACEPW\n\\end{document}", "Thomas Jefferson", ["Password 1", "Password 2"]),
+    "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2\n\\end{document}"
+      )
 
-    assert_true(PDFWriter.create_org_pdf("\\documentclass{article}\n\\begin{document}\nREPLACEPW, REPLACEPW\n\\end{document}", "Thomas Jefferson 2", ["Password 1", "Password 2"]))
-    assert_latex_equal('ThomasJefferson2', "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2, Password 1 \\\\\nPassword 2\n\\end{document}")
+      assert_equal(
+      PDFWriter.create_latex_content("\\documentclass{article}\n\\begin{document}\nREPLACEPW, REPLACEPW\n\\end{document}", "Thomas Jefferson 2", ["Password 1", "Password 2"]),
+    "\\documentclass{article}\n\\begin{document}\nPassword 1 \\\\\nPassword 2, Password 1 \\\\\nPassword 2\n\\end{document}"
+    )
   end
 
   def test_create_pdfs
