@@ -83,7 +83,7 @@ class VoteParser
   #   position to a set of votes
   # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array<String>] vote A collection of the individuals receiving votes
-  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school. Used for validating tokens
+  # @param [Hash{String => String}] token_mapping The mapping of the token onto a school. Used for validating tokens
   # @return [String] the warning associated with the vote
   def self.validate_vote(vote_counts, used_tokens, vote, token_mapping)
     if used_tokens.include?(vote[0])
@@ -106,7 +106,7 @@ class VoteParser
   #   position to a set of votes
   # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
-  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school
+  # @param [Hash{String => String}] token_mapping The mapping of the token onto a school
   # @return [String] the warnings generated
   def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
     warning = ''
@@ -143,7 +143,7 @@ class VoteParser
   # @param [Array<Array<String>>] votes The collection of votes as a 2D array with
   #   rows representing individual ballots and columns representing entries votes
   #   for a given position
-  # @param [Hash{Symbol => String}] token_mapping The mapping of the token onto a school
+  # @param [Hash{String => String}] token_mapping The mapping of the token onto a school
   # @return [Hash{Symbol=>Integer,String,Hash{String}] A collection of the primary output and all warnings
   def self.process_votes(votes, token_mapping)
     # @type [Hash{String=> Hash{String=>Integer}}]
@@ -163,7 +163,7 @@ class OutputPrinter
   #
   # @param [String?] file The file to write to
   # @param [String] election_report The main body of the report
-  # @param [String] warning All warnings printed in the output
+  # @param [String?] warning All warnings printed in the output
   def self.write_election_report(file, election_report, warning = '')
     return if file.nil?
 
@@ -245,9 +245,7 @@ class OutputPrinter
   # @return [Integer] the number of votes cast for a position (does not include
   #   abstentions)
   def self.sum_position_votes(position_vote_record)
-    pos_total = 0
-    position_vote_record.each_pair { |_candidate, votes| pos_total += votes }
-    pos_total
+    position_vote_record.values.sum
   end
 
   # Determine if a majority has been reached
@@ -291,7 +289,7 @@ class OutputPrinter
   # @param [Integer] vote_count The number of valid votes cast
   # @param [Array[String]] column_headers A listing of the column headers from the
   #   CSV (with 0 being the token)
-  # @param [Hash{String => Hash{String => Integer}}] vote_counts The mapping of a
+  # @param [Hash{Integer => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
   # @return [String] the vote report
   def self.vote_report(vote_count, column_headers, vote_counts)
