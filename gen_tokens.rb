@@ -3,7 +3,6 @@
 # Author: Hundter Biede (hbiede.com)
 # Version: 1.2
 # License: MIT
-
 require 'csv'
 
 # Whether or not to generate PDFs
