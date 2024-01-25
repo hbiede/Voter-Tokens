@@ -57,3 +57,9 @@ build-iPhoneSimulator/
 
 # JetBrains IDEs
 .idea/*
+
+# Output
+pdfs/*
+pdfs*/*
+!pdfs/template/*
+!pdfs*/template/*

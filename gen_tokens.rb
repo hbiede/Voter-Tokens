@@ -33,7 +33,7 @@ class PDFWriter
   def self.write_latex_to_pdf(org, org_tex)
     # noinspection RegExpRedundantEscape
     pdf_name = format('%<FileName>s.tex', FileName: org.gsub(/[\s().#!]/, ''))
-    File.open(pdf_name, 'w') { |f| f.write(org_tex) }
+    File.write(pdf_name, org_tex)
     output = `lualatex #{pdf_name} 2>&1`
     result = $CHILD_STATUS.success?
     if result
@@ -70,8 +70,10 @@ class PDFWriter
   # @param [Integer] longest_org_name_length The length of the longest org name
   def self.print_progress_report(index, org, number_of_orgs, longest_name_length)
     percent_done = (index + 1.0) / number_of_orgs
+    # rubocop:disable Lint/FormatParameterMismatch
     format("\r%.2f%%%% [%s%s]: PDF generated for %-#{longest_name_length}s",
            100 * percent_done, '=' * (15 * percent_done).ceil, ' ' * (15 * (1 - percent_done)).floor, org)
+    # rubocop:enable Lint/FormatParameterMismatch
   end
 
   # Create a unique PDF for each organization with its passwords
@@ -150,7 +152,7 @@ class TokenGenerator
       warn format('Sorry, the file %<File>s does not exist', File: file_name)
       exit 1
     end
-    csv.delete_if { |line| line.join('') =~ /^\s*$/ } # delete blank lines
+    csv.delete_if { |line| line.join =~ /^\s*$/ } # delete blank lines
     csv
   end
 
@@ -158,7 +160,7 @@ class TokenGenerator
   # @return [String] The randomized string
   # @private
   def self.random_string(length)
-    length.times.map { CHARS.sample }.join('')
+    length.times.map { CHARS.sample }.join
   end
 
   # @private
@@ -257,7 +259,7 @@ class TokenGenerator
     write_tokens_to_csv(all_tokens, ARGV[1])
 
     puts get_token_count_report all_tokens
-    puts PDFWriter.create_pdfs(all_tokens, IO.read('pdfs/template/voting.tex')) if generate_pdfs
+    puts PDFWriter.create_pdfs(all_tokens, File.read('pdfs/template/voting.tex')) if generate_pdfs
   end
 end
 

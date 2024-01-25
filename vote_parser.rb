@@ -18,7 +18,7 @@ def read_vote_csv(file_name)
     warn format('Sorry, the file %<File>s does not exist', File: file_name)
     exit 1
   end
-  csv.delete_if { |line| line.join('') =~ /^\s*$/ } # delete blank lines
+  csv.delete_if { |line| line.join =~ /^\s*$/ } # delete blank lines
   csv
 end
 
@@ -129,7 +129,7 @@ class VoteParser
   def self.init(vote_file, token_file)
     votes = read_vote_csv vote_file
     tokens = read_tokens token_file
-    token_mapping = tokens.map { |token| [token[1], token[0]] }.to_h
+    token_mapping = tokens.to_h { |token| [token[1], token[0]] }
 
     # get the column headers and remove them from the voting pool
     # @type [Hash{Integer => String}]
@@ -187,7 +187,7 @@ class OutputPrinter
                     end
     format("\t%<MjrMarker>s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
            Name: "#{candidate_name}:", Votes: votes,
-           S: votes != 1 ? 's' : ' ', MjrMarker: majority_mark, Per: percent)
+           S: votes == 1 ? ' ' : 's', MjrMarker: majority_mark, Per: percent)
   end
 
   # Generate a formatted string of the number of abstention votes cast
@@ -201,7 +201,7 @@ class OutputPrinter
     if abstained.positive?
       format("\t %<Title>-20s %<AbsVotes>4d vote%<S>s\n",
              Title: 'Abstained:', AbsVotes: abstained,
-             S: abstained != 1 ? 's' : '')
+             S: abstained == 1 ? '' : 's')
     else
       ''
     end
@@ -214,10 +214,10 @@ class OutputPrinter
   #   positions (does not count abstentions)
   # @return [String] the abstention counts, underline, position totals as a string
   def self.position_report_totals(vote_count, pos_total)
-    abstention_count_string(vote_count, pos_total) + '-' * 49 +
+    abstention_count_string(vote_count, pos_total) + ('-' * 49) +
       format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
              Title: 'Total:', TotalVotes: vote_count,
-             S: vote_count != 1 ? 's' : '')
+             S: vote_count == 1 ? '' : 's')
   end
 
   # Generate the entire report for a given position
