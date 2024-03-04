@@ -78,6 +78,9 @@ class TestPDFWriter < Test::Unit::TestCase
   end
 
   def test_create_pdfs
+    orig_stdout = $stdout.clone
+    $stdout = File.new(File::NULL,"w")
+
     tokens = {
         'James Madison' => %w[1 2],
         "James Monroe" => %w[3 4],
@@ -97,6 +100,8 @@ class TestPDFWriter < Test::Unit::TestCase
       File.delete "pdfs/JamesMadison.pdf"
       File.delete "pdfs/JohnQAdams.pdf"
     end
+  ensure
+    $stdout = orig_stdout
   end
 end
 

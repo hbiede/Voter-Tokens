@@ -11,7 +11,18 @@ SimpleCov.start do
   enable_coverage :branch
 end
 
-Test::Unit::AutoRunner.run(true, File.dirname(__FILE__))
+def disable_stderr
+  orig_stderr = $stderr.clone
+  $stderr = File.new(File::NULL, 'w')
+
+  yield
+ensure
+  $stderr = orig_stderr
+end
+
+disable_stderr do
+  Test::Unit::AutoRunner.run(true, File.dirname(__FILE__))
+end
 
 if ENV['CI'] == 'true'
   require 'codecov'

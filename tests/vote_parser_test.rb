@@ -398,6 +398,9 @@ end
 #noinspection RubyResolve
 class TestOutputPrinter < Test::Unit::TestCase
   def test_write_output
+    orig_stdout = $stdout.clone
+    $stdout = File.new(File::NULL,"w")
+  
     begin
       OutputPrinter.write_output('REPORT', 'WARNING', nil)
     rescue
@@ -416,6 +419,8 @@ class TestOutputPrinter < Test::Unit::TestCase
     contents = file.read
     assert_true(contents.match?(/\sThis is a fake election report that needs to be seen\s/m))
     File.delete file
+  ensure
+    $stdout = orig_stdout
   end
 
   def test_write_election_report

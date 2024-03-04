@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.2
+# Version: 1.3
 # License: MIT
 require 'csv'
+require 'optparse'
 
 # Whether or not to generate PDFs
 generate_pdfs = true
+OptionParser.new do |opt|
+  opt.on('-n', '--no-pdfs', 'Disable PDF generation') { generate_pdfs = false }
+end.parse!
 
 # Regex to match the following alphabet: ^[a-km-zA-HJ-NPRT-Z2-46-9]{7,7}$
 # noinspection SpellCheckingInspection
@@ -70,9 +74,10 @@ class PDFWriter
   # @param [Integer] longest_org_name_length The length of the longest org name
   def self.print_progress_report(index, org, number_of_orgs, longest_name_length)
     percent_done = (index + 1.0) / number_of_orgs
+    filled_char_count = (14 * percent_done).floor
     # rubocop:disable Lint/FormatParameterMismatch
-    format("\r%.2f%%%% [%s%s]: PDF generated for %-#{longest_name_length}s",
-           100 * percent_done, '=' * (15 * percent_done).ceil, ' ' * (15 * (1 - percent_done)).floor, org)
+    format("\r%.2f%%%% [=%s%s]: PDF generated for %-#{longest_name_length}s",
+           100 * percent_done, '=' * filled_char_count, ' ' * (14 - filled_char_count), org)
     # rubocop:enable Lint/FormatParameterMismatch
   end
 
@@ -89,7 +94,7 @@ class PDFWriter
       printf(print_progress_report(i, org, all_tokens.size, longest_org_name))
     end
     # Clear the progress bar
-    print("\r")
+    print("\rAll PDFs generated!")
 
     system('mv *.pdf pdfs/')
     system('rm *.out *.aux *.log *.tex')
