@@ -195,7 +195,7 @@ class TestTokenGenerator < Test::Unit::TestCase
     }
     all_tokens = {}
     lines.each do |line|
-      TokenGenerator.process_chapter(line, columns, all_tokens)
+      TokenGenerator.process_chapter(line, columns, all_tokens, 7)
       # noinspection RubyNilAnalysis
       assert_equal(line[1], all_tokens.fetch(line[0]).length)
     end
@@ -250,12 +250,12 @@ class TestTokenGenerator < Test::Unit::TestCase
         %w[Test 1],
         %w[Test2 10],
     ]
-    TokenGenerator.parse_organizations(all_tokens, lines)
+    TokenGenerator.parse_organizations(all_tokens, lines, 7)
     assert_equal(1, all_tokens["Test"].length)
     assert_equal(10, all_tokens["Test2"].length)
 
     begin
-      TokenGenerator.parse_organizations({}, [["", ""], ["", ""]])
+      TokenGenerator.parse_organizations({}, [["", ""], ["", ""]], 7)
     rescue SystemExit
       assert_true true
     else

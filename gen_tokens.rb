@@ -1,14 +1,22 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.3
+# Version: 1.4
 # License: MIT
 require 'csv'
 require 'optparse'
 
+# how many characters to pad
+token_char_count = 7
 # Whether or not to generate PDFs
 generate_pdfs = true
 OptionParser.new do |opt|
+  opt.on(
+    '-cCOUNT',
+    '--chars=COUNT',
+    Integer,
+    'How many characters long should tokens be? (Default: 7)'
+  ) { |o| token_char_count = o }
   opt.on('-n', '--no-pdfs', 'Disable PDF generation') { generate_pdfs = false }
 end.parse!
 
@@ -23,9 +31,6 @@ SWEAR_PREVENTION_MATCHER = /(fuc?k)|(fag)|(cunt)|(n[i1]g)|(a[s5][s5])|
 (d[i1]c?k?)|(pen[i1][s5])|(pube)|(p[i1][s5][s5])|(g[o0]d)|(crap)|(b[o0]ne)|
 (basta)|(ar[s5])|(ana[l1])|(anu[s5])|(ba[l1][l1])|(b[l1][o0]w)|(b[o0][o0]b)|
 ([l1]mf?a[o0])/ix.freeze
-
-# how many characters to pad
-TOKEN_LENGTH = 7
 
 # Writes tokens to PDFs
 class PDFWriter
@@ -173,7 +178,7 @@ class TokenGenerator
   #   generated, used to prevent duplicates
   # @param [Numeric] token_length The length of the token
   # @return [String] the new token
-  def self.gen_token(all_tokens, token_length = TOKEN_LENGTH)
+  def self.gen_token(all_tokens, token_length = token_char_count)
     new_token = ''
     loop do
       new_token = random_string(token_length)
@@ -188,14 +193,15 @@ class TokenGenerator
   # @param [CSV::Row|Enumerator] line The elements from this line to be processed
   # @param [Hash<Integer => integer>] column The columns containing pertinent info
   # @param [Hash<String => Array<String>>] all_tokens
-  def self.process_chapter(line, column, all_tokens)
+  # @param [Numeric] token_length The length of the token
+  def self.process_chapter(line, column, all_tokens, token_char_count)
     org = line[column[:Org]]
     (0...line[column[:Delegates]].to_i).each do
       # gen tokens and push to the csv
       if all_tokens.include?(org)
-        all_tokens.fetch(org).push(gen_token(all_tokens))
+        all_tokens.fetch(org).push(gen_token(all_tokens, token_char_count))
       else
-        all_tokens.store(org, [gen_token(all_tokens)])
+        all_tokens.store(org, [gen_token(all_tokens, token_char_count)])
       end
     end
   end
@@ -219,7 +225,8 @@ class TokenGenerator
   #
   # @param [Hash<String => Array<String>>] all_tokens The mapping into which the tokens will be inserted
   # @param [Array<Array<String>>] lines The lines from the delegate count CSV
-  def self.parse_organizations(all_tokens, lines)
+  # @param [Numeric] token_length The length of the token
+  def self.parse_organizations(all_tokens, lines, token_char_count)
     # index of our two key columns (all other columns are ignored)
     # @type [Hash<Integer => integer>]
     columns = { Org: 0, Delegates: 0 }
@@ -232,7 +239,7 @@ class TokenGenerator
         # header line
         determine_header_columns(columns, line)
       else
-        process_chapter(line, columns, all_tokens)
+        process_chapter(line, columns, all_tokens, token_char_count)
       end
     end
   end
@@ -254,13 +261,14 @@ class TokenGenerator
   #
   # @param [Boolean] generate_pdfs True if the program should generate PDFs with
   #   the generated passwords
-  def self.main(generate_pdfs)
+  # @param [Numeric] token_length The length of the token
+  def self.main(generate_pdfs, token_char_count)
     # @type [Hash<String => Array<String>>]
     all_tokens = {}
     token_arg_count_validator ARGV
     lines = read_delegate_csv ARGV[0]
 
-    parse_organizations(all_tokens, lines)
+    parse_organizations(all_tokens, lines, token_char_count)
     write_tokens_to_csv(all_tokens, ARGV[1])
 
     puts get_token_count_report all_tokens
@@ -268,5 +276,5 @@ class TokenGenerator
   end
 end
 
-TokenGenerator.main generate_pdfs if __FILE__ == $PROGRAM_NAME
+TokenGenerator.main(generate_pdfs, token_char_count) if __FILE__ == $PROGRAM_NAME
 # :nocov:
