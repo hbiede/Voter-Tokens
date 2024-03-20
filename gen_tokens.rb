@@ -10,6 +10,7 @@ require 'optparse'
 token_char_count = 7
 # Whether or not to generate PDFs
 generate_pdfs = true
+# :nocov:
 OptionParser.new do |opt|
   opt.on(
     '-cCOUNT',
@@ -19,6 +20,7 @@ OptionParser.new do |opt|
   ) { |o| token_char_count = o }
   opt.on('-n', '--no-pdfs', 'Disable PDF generation') { generate_pdfs = false }
 end.parse!
+# :nocov:
 
 # Regex to match the following alphabet: ^[a-km-zA-HJ-NPRT-Z2-46-9]{7,7}$
 # noinspection SpellCheckingInspection

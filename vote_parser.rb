@@ -7,6 +7,7 @@
 require 'csv'
 require 'optparse'
 
+# :nocov:
 options = { reverse: true }
 OptionParser.new do |opt|
   opt.on(
@@ -16,6 +17,7 @@ OptionParser.new do |opt|
     'If the votes should be counted in chronological order, keeping the first (defaults to false)'
   ) { |o| options[:reverse] = o }
 end.parse!
+# :nocov:
 
 # Read the contents of the given CSV file
 #
@@ -194,11 +196,7 @@ class OutputPrinter
   # @param [Integer] votes The number of votes they received
   # @return [String] a formatted string of a single ballot entry
   def self.ballot_entry_string(candidate_name, votes, percent)
-    majority_mark = if percent > 50
-                      '*'
-                    else
-                      ' '
-                    end
+    majority_mark = percent > 50 ? '*' : ' '
     format("\t%<MjrMarker>s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
            Name: "#{candidate_name}:", Votes: votes,
            S: votes == 1 ? ' ' : 's', MjrMarker: majority_mark, Per: percent)
@@ -289,11 +287,7 @@ class OutputPrinter
     pos_total = sum_position_votes(position_vote_record)
     individual_report = position_report_individuals(vote_count, pos_total,
                                                     position_vote_record)
-    majority_reached_str = if majority_reached?(vote_count, position_vote_record)
-                             ''
-                           else
-                             ' (No Majority)'
-                           end
+    majority_reached_str = majority_reached?(vote_count, position_vote_record) ? '' : ' (No Majority)'
     format("\n%<Pos>s%<Maj>s\n%<Individuals>s",
            Pos: position_title, Maj: majority_reached_str, Individuals: individual_report)
   end
