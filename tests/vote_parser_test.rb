@@ -502,22 +502,22 @@ class TestOutputPrinter < Test::Unit::TestCase
   def test_abstention_count_string
     assert_equal('', OutputPrinter.abstention_count_string(1, 2))
     assert_equal('', OutputPrinter.abstention_count_string(0, 1))
-    assert_equal("\t Abstained:              1 vote\n", OutputPrinter.abstention_count_string(10, 9))
-    assert_equal("\t Abstained:             91 votes\n", OutputPrinter.abstention_count_string(100, 9))
-    assert_equal("\t Abstained:           1091 votes\n", OutputPrinter.abstention_count_string(1100, 9))
+    assert_equal("\t [Abstained]:            1 vote\n", OutputPrinter.abstention_count_string(10, 9))
+    assert_equal("\t [Abstained]:           91 votes\n", OutputPrinter.abstention_count_string(100, 9))
+    assert_equal("\t [Abstained]:         1091 votes\n", OutputPrinter.abstention_count_string(1100, 9))
   end
 
   def test_position_report_totals
     assert_equal(
-      "\t Abstained:              1 vote\n-------------------------------------------------\n\t Total:                193 votes\n\n",
+      "\t [Abstained]:            1 vote\n-------------------------------------------------\n\t Total:                193 votes\n\n",
       OutputPrinter.position_report_totals(193, 192)
     )
     assert_equal(
-      "\t Abstained:            100 votes\n-------------------------------------------------\n\t Total:                193 votes\n\n",
+      "\t [Abstained]:          100 votes\n-------------------------------------------------\n\t Total:                193 votes\n\n",
       OutputPrinter.position_report_totals(193, 93)
     )
     assert_equal(
-      "\t Abstained:              1 vote\n-------------------------------------------------\n\t Total:                  1 vote\n\n",
+      "\t [Abstained]:            1 vote\n-------------------------------------------------\n\t Total:                  1 vote\n\n",
       OutputPrinter.position_report_totals(1, 0)
     )
     assert_equal(
@@ -539,7 +539,7 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     expected = "\t*AVote4:                 4 votes (66.67%)\n" +
       "\t AVote3:                 1 vote  (16.67%)\n" +
-      "\t Abstained:              1 vote\n" +
+      "\t [Abstained]:            1 vote\n" +
       "-------------------------------------------------\n" +
       "\t Total:                  6 votes\n\n"
     assert_equal(expected, result)
@@ -564,7 +564,7 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     expected = "\t AVote4:                 4 votes (0.40%)\n" +
       "\t AVote3:                 2 votes (0.20%)\n" +
-      "\t Abstained:            994 votes\n" +
+      "\t [Abstained]:          994 votes\n" +
       "-------------------------------------------------\n" +
       "\t Total:               1000 votes\n\n"
     assert_equal(expected, result)
@@ -577,7 +577,7 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     expected = "\t*AVote4:               600 votes (60.00%)\n" +
       "\t AVote3:                 2 votes (0.20%)\n" +
-      "\t Abstained:            398 votes\n" +
+      "\t [Abstained]:          398 votes\n" +
       "-------------------------------------------------\n" +
       "\t Total:               1000 votes\n\n"
     assert_equal(expected, result)
@@ -631,7 +631,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "President\n" +
         "\t*AVote4:                60 votes (60.00%)\n" +
         "\t AVote3:                20 votes (20.00%)\n" +
-        "\t Abstained:             20 votes\n" +
+        "\t [Abstained]:           20 votes\n" +
         "-------------------------------------------------\n" +
         "\t Total:                100 votes",
       OutputPrinter.position_report(
@@ -645,7 +645,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "President (No Majority)\n" +
         "\t AVote3:                20 votes (20.00%)\n" +
         "\t AVote4:                20 votes (20.00%)\n" +
-        "\t Abstained:             60 votes\n" +
+        "\t [Abstained]:           60 votes\n" +
         "-------------------------------------------------\n" +
         "\t Total:                100 votes",
       OutputPrinter.position_report(
@@ -660,7 +660,7 @@ class TestOutputPrinter < Test::Unit::TestCase
         "\t AVote4:                21 votes (21.00%)\n" +
         "\t AVote2:                20 votes (20.00%)\n" +
         "\t AVote3:                20 votes (20.00%)\n" +
-        "\t Abstained:             39 votes\n" +
+        "\t [Abstained]:           39 votes\n" +
         "-------------------------------------------------\n" +
         "\t Total:                100 votes",
       OutputPrinter.position_report(
@@ -691,7 +691,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "\t Total:                  6 votes\n\n\n" +
       "Secretary (No Majority)\n" +
       "\t Thomas Jefferson:       3 votes (50.00%)\n" +
-      "\t Abstained:              3 votes\n" +
+      "\t [Abstained]:            3 votes\n" +
       "-------------------------------------------------\n" +
       "\t Total:                  6 votes\n\n\n" +
       "Treasurer (No Majority)\n" +

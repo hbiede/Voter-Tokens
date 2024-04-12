@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.4
+# Version: 1.4.1
 # License: MIT
 
 require 'csv'
@@ -212,7 +212,7 @@ class OutputPrinter
     abstained = vote_count - position_vote_count
     if abstained.positive?
       format("\t %<Title>-20s %<AbsVotes>4d vote%<S>s\n",
-             Title: 'Abstained:', AbsVotes: abstained,
+             Title: '[Abstained]:', AbsVotes: abstained,
              S: abstained == 1 ? '' : 's')
     else
       ''
