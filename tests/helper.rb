@@ -25,8 +25,8 @@ disable_stderr do
 end
 
 if ENV['CI'] == 'true'
-  require 'codecov'
-  SimpleCov.formatter = SimpleCov::Formatter::Codecov
+  require 'simplecov-cobertura'
+  SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 else
   SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 end
