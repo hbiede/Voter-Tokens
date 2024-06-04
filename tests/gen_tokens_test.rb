@@ -1,5 +1,5 @@
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.2
+# Version: 1.5
 # License: MIT
 require_relative '../gen_tokens'
 require_relative './helper'

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.4
+# Version: 1.5
 # License: MIT
 require 'csv'
 require 'optparse'

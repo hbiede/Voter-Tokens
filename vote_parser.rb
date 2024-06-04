@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.4.1
+# Version: 1.5
 # License: MIT
 
 require 'csv'
@@ -27,9 +27,14 @@ def remove_timestamps(csv)
   return [] if csv.nil? || csv.empty?
 
   timestamp_index = csv[0].index { |col| col =~ /Timestamp/i }
-  timestamp_index.nil? ? csv : csv.map do |row|
-    row.delete_at timestamp_index
-    row
+
+  if timestamp_index.nil?
+    csv
+  else
+    csv.map do |row|
+      row.delete_at timestamp_index
+      row
+    end
   end
 end
 
@@ -187,63 +192,162 @@ class VoteParser
   end
 end
 
+# Convert arrays of text into a formatted text table
+class TableGenerator
+  # Format an array of strings into a table
+  #
+  # @param [Array<Array<String>>] body the main content of the table
+  # @param [Array<String>] header an optional header to prepend to the table
+  # @param [Array<String>] footer an optional footer to append to the table
+  # @return [String] a table formatted as a string
+  def self.generate(body, header: [], footer: [])
+    lengths = get_table_lengths(body, header, footer)
+
+    result = generate_header(header, lengths)
+    result += "#{generate_body(body, lengths)}\n"
+    result += generate_footer(footer, lengths)
+    result.strip
+  end
+
+  # @param [Array<Array<String>>] body the main body of the table
+  # @param [Array<String>] header the header of the table
+  # @param [Array<String>] footer the footer of the table
+  # @return [Integer] the number of columns
+  def self.get_column_count(body, header, footer)
+    body_columns = body.map(&:length).max
+    [body_columns.nil? ? 0 : body_columns, header.length, footer.length].max.to_i
+  end
+
+  def self.get_body_lengths(body, column_count)
+    lengths = Array.new(column_count, 0)
+    body.each do |row|
+      row.each_with_index do |entry, i|
+        lengths[i] = [entry.length, lengths[i]].max
+      end
+    end
+    lengths
+  end
+
+  # @param [Array<Array<String>>] body the main body of the table
+  # @param [Array<String>] header the header of the table
+  # @param [Array<String>] footer the footer of the table
+  # @return [Array<Integer>] the length of each column
+  def self.get_table_lengths(body, header, footer)
+    column_count = get_column_count(body, header, footer)
+    return [] if column_count.zero?
+
+    lengths = get_body_lengths(body, column_count)
+    header.each_with_index { |entry, i| lengths[i] = [entry.length, lengths[i]].max }
+    footer.each_with_index { |entry, i| lengths[i] = [entry.length, lengths[i]].max }
+    lengths
+  end
+
+  # Generate a horizontal divider line
+  #
+  # @param [Array<Integer>] lengths the length of each column of the table
+  # @return [String] the resulting divider line that aligns to the given column lengths
+  def self.generate_break_line(lengths, with: '-')
+    return '' if lengths.empty? || lengths.all?(&:zero?)
+
+    "+#{with}#{lengths.map { |length| with * length }.join "#{with}+#{with}"}#{with}+\n"
+  end
+
+  # @param [Array<String>] array the array of strings to pad
+  # @param [Array<Integer>] with the desired length of each entry
+  # @return [Array<String>] the padded array
+  def self.pad(array, with:, left_align: false)
+    formatted_array = array.each_with_index.map { |entry, i| format("%#{left_align ? '-' : ''}#{with[i]}s", entry) }
+    if formatted_array.length < with.length
+      formatted_array.concat(with[formatted_array.length..with.length].map { |length| ' ' * length })
+    end
+    formatted_array
+  end
+
+  # Generate the header text for a table
+  #
+  # @param [Array<String>] header the header text to generate
+  # @param [Array<Integer>] lengths the length of each column of the table
+  # @return [String] the resulting header string
+  def self.generate_header(header, lengths)
+    if header.empty? || header.all?(&:empty?)
+      generate_break_line(lengths)
+    else
+      "#{generate_break_line(lengths)}| #{pad(header,
+                                              with: lengths,
+                                              left_align: true).join(' | ')} |\n#{generate_break_line(lengths,
+                                                                                                      with: '=')}"
+    end
+  end
+
+  # Generate the body text of the table
+  #
+  # @param [Array<Array<String>>] body the main content of the table
+  # @param [Array<Integer>] lengths the length of each column in the table
+  # @return [String] the resulting body string
+  def self.generate_body(body, lengths)
+    body
+      .filter { |row| row.any? { |entry| !entry.empty? } }
+      .map { |row| "| #{pad(row, with: lengths).join(' | ')} |" }.join "\n"
+  end
+
+  # Generate the footer text for a table
+  #
+  # @param [Array<String>] footer the header text to generate
+  # @param [Array<Integer>] lengths the length of each column of the table
+  # @return [String] the resulting footer string
+  def self.generate_footer(footer, lengths)
+    if footer.empty? || footer.all?(&:empty?)
+      generate_break_line(lengths)
+    else
+      "#{generate_break_line(lengths,
+                             with: '=')}| #{pad(footer,
+                                                with: lengths).join(' | ')} |\n#{generate_break_line(lengths)}"
+    end
+  end
+end
+
 # Create a print out
 class OutputPrinter
   # Write the output of the program to file if a file is given
   #
-  # @param [String?] file The file to write to
   # @param [String] election_report The main body of the report
-  # @param [String?] warning All warnings printed in the output
-  def self.write_election_report(file, election_report, warning = '')
-    return if file.nil?
+  # @param [String?] to The file to write to
+  # @param [String?] with All warnings printed in the output
+  def self.write_election_report(election_report, to:, with: '')
+    return if to.nil?
 
-    File.write(file,
+    File.write(to,
                format("%<Rule>s\n%<Time>s\n%<Rule>s\n%<Warn>s\n%<Report>s\n\n",
-                      Rule: ('-' * 20), Time: Time.now.to_s, Warn: warning,
+                      Rule: ('-' * 20), Time: Time.now.to_s, Warn: with,
                       Report: election_report), mode: 'a')
     nil
   end
 
-  # Generate a formatted string of a single ballot entry
+  # Generate values representing the vote counts for a given candidate
   #
   # @param [String] candidate_name The name of the candidate
   # @param [Integer] votes The number of votes they received
-  # @return [String] a formatted string of a single ballot entry
-  def self.ballot_entry_string(candidate_name, votes, percent)
-    majority_mark = percent > 50 ? '*' : ' '
-    format("\t%<MjrMarker>s%<Name>-20s %<Votes>4d vote%<S>s (%<Per>.2f%%)\n",
-           Name: "#{candidate_name}:", Votes: votes,
-           S: votes == 1 ? ' ' : 's', MjrMarker: majority_mark, Per: percent)
+  # @return [Array<String>] a formatted string of a single ballot entry
+  def self.ballot_entry_values(candidate_name, votes, percent)
+    majority_mark = percent > 50 ? '*' : ''
+    ["#{majority_mark}#{candidate_name}",
+     "#{votes} vote#{votes == 1 ? ' ' : 's'}",
+     format('%<Per>.2f%%', Per: percent)]
   end
 
-  # Generate a formatted string of the number of abstention votes cast
+  # Generate values representing the abstain votes for a given position
   #
   # @param [Integer] vote_count The number of total votes cast (including
   #   abstentions)
   # @param [Integer] position_vote_count The number of votes cast for candidates
-  # @return [String] the number of abstention votes cast
-  def self.abstention_count_string(vote_count, position_vote_count)
+  # @return [Array<String>] the number of abstention votes cast
+  def self.abstention_count_values(vote_count, position_vote_count)
     abstained = vote_count - position_vote_count
     if abstained.positive?
-      format("\t %<Title>-20s %<AbsVotes>4d vote%<S>s\n",
-             Title: '[Abstained]:', AbsVotes: abstained,
-             S: abstained == 1 ? '' : 's')
+      ['[Abstained]', "#{abstained} vote#{abstained == 1 ? ' ' : 's'}"]
     else
-      ''
+      []
     end
-  end
-
-  # Generate the abstention counts, underline, position totals as a string
-  #
-  # @param [Integer] vote_count The number of total votes cast in the election
-  # @param [Integer] pos_total The number of votes cast in the election for
-  #   positions (does not count abstentions)
-  # @return [String] the abstention counts, underline, position totals as a string
-  def self.position_report_totals(vote_count, pos_total)
-    abstention_count_string(vote_count, pos_total) + ('-' * 49) +
-      format("\n\t %<Title>-20s %<TotalVotes>4d vote%<S>s\n\n",
-             Title: 'Total:', TotalVotes: vote_count,
-             S: vote_count == 1 ? '' : 's')
   end
 
   # Generate the entire report for a given position
@@ -255,13 +359,17 @@ class OutputPrinter
   #   names onto the number of votes they received
   # @return [String] the entire report for a given position
   def self.position_report_individuals(vote_count, pos_total, position_vote_record)
-    return_string = ''
     # sort the positions by votes received in descending order
-    position_vote_record.sort_by { |candidate, votes| [-votes, candidate] }.to_h.each_pair do |candidate, votes|
-      return_string += ballot_entry_string(candidate.to_s, votes,
-                                           100.0 * votes / vote_count)
+    result_entries = position_vote_record
+                     .sort_by { |candidate, votes| [-votes, candidate] }
+                     .to_h
+                     .map do |candidate, votes|
+      ballot_entry_values(candidate.to_s, votes, 100.0 * votes / vote_count)
     end
-    return_string + position_report_totals(vote_count, pos_total)
+    abstentions = abstention_count_values(vote_count, pos_total)
+    result_entries.push abstentions unless abstentions.empty?
+    footer = ['Total', "#{vote_count} vote#{vote_count == 1 ? ' ' : 's'}"]
+    TableGenerator.generate(result_entries, footer: footer)
   end
 
   # Sum the number of votes cast for a position (does not include abstentions)
@@ -301,9 +409,13 @@ class OutputPrinter
     pos_total = sum_position_votes(position_vote_record)
     individual_report = position_report_individuals(vote_count, pos_total,
                                                     position_vote_record)
-    majority_reached_str = majority_reached?(vote_count, position_vote_record) ? '' : ' (No Majority)'
-    format("\n%<Pos>s%<Maj>s\n%<Individuals>s",
-           Pos: position_title, Maj: majority_reached_str, Individuals: individual_report)
+    majority_reached_str = if majority_reached?(vote_count, position_vote_record)
+                             ''
+                           else
+                             ' (No Majority)'
+                           end
+    format("\n\n%<Pos>s%<Maj>s\n%<Individuals>s", Pos: position_title, Maj: majority_reached_str,
+                                                  Individuals: individual_report)
   end
 
   # Generate a the overall vote report
@@ -331,7 +443,7 @@ class OutputPrinter
   def self.write_output(election_report, warning, file)
     warn warning unless warning.nil? || warning.empty?
     puts election_report
-    OutputPrinter.write_election_report(file, election_report, warning)
+    OutputPrinter.write_election_report(election_report, to: file, with: warning)
   end
 end
 
@@ -342,7 +454,8 @@ def main(opt)
   input = VoteParser.init(ARGV[0], ARGV[1])
   # noinspection RubyMismatchedParameterType
   # @type [Hash{Symbol=>Integer,String,Hash{Integer=>Hash{String=>Integer}}]
-  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping], opt[:reverse])
+  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping],
+                                              opt[:reverse])
   # noinspection RubyMismatchedParameterType
   election_report = OutputPrinter.vote_report(
     processed_values[:TotalVoterCount],

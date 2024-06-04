@@ -1,5 +1,5 @@
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.3
+# Version: 1.5
 # License: MIT
 require_relative '../vote_parser'
 require_relative './helper'
@@ -417,6 +417,71 @@ class TestVoteParser < Test::Unit::TestCase
 end
 
 # noinspection RubyResolve
+class TestTableGenerator < Test::Unit::TestCase
+  def test_generate_empty
+    assert_equal('', TableGenerator.generate([]))
+    assert_equal('', TableGenerator.generate([[]]))
+    assert_equal('', TableGenerator.generate([['', '', '']]))
+    assert_equal('', TableGenerator.generate([], header: []))
+    assert_equal('', TableGenerator.generate([], header: ['', '', '']))
+    assert_equal('', TableGenerator.generate([], footer: []))
+    assert_equal('', TableGenerator.generate([], footer: ['', '', '']))
+    assert_equal('', TableGenerator.generate([], header: [], footer: []))
+    assert_equal('', TableGenerator.generate([[]], header: [], footer: []))
+    assert_equal('', TableGenerator.generate([['', '', '']], header: ['', '', ''], footer: ['', '', '']))
+  end
+
+  def test_generate_basic
+    assert_equal(
+      "+---+---+---+\n" +
+        "| x | y | z |\n" +
+        "+---+---+---+",
+      TableGenerator.generate([%w[x y z]])
+    )
+    assert_equal(
+      "+-----+------+-----+\n" +
+        "|   x |    y |   z |\n" +
+        "| xxx | yyyy | zzz |\n" +
+        "|  x2 |   y2 |     |\n" +
+        "+-----+------+-----+",
+      TableGenerator.generate([%w[x y z], %w[xxx yyyy zzz], %w[x2 y2]])
+    )
+    assert_equal(
+      "+-----+------+-----+\n" +
+        "| A   | B    | C   |\n" +
+        "+=====+======+=====+\n" +
+        "|   x |    y |   z |\n" +
+        "| xxx | yyyy | zzz |\n" +
+        "|  x2 |   y2 |     |\n" +
+        "+-----+------+-----+",
+      TableGenerator.generate([%w[x y z], %w[xxx yyyy zzz], %w[x2 y2]], header: %w[A B C])
+    )
+    assert_equal(
+      "+-----+------+-----+\n" +
+        "|   x |    y |   z |\n" +
+        "| xxx | yyyy | zzz |\n" +
+        "|  x2 |   y2 |     |\n" +
+        "+=====+======+=====+\n" +
+        "|   A |    B |   C |\n" +
+        "+-----+------+-----+",
+      TableGenerator.generate([%w[x y z], %w[xxx yyyy zzz], %w[x2 y2]], footer: %w[A B C])
+    )
+    assert_equal(
+      "+-----+------+-----+\n" +
+        "| A   | B    | C   |\n" +
+        "+=====+======+=====+\n" +
+        "|   x |    y |   z |\n" +
+        "| xxx | yyyy | zzz |\n" +
+        "|  x2 |   y2 |     |\n" +
+        "+=====+======+=====+\n" +
+        "|   Q |    R |   S |\n" +
+        "+-----+------+-----+",
+      TableGenerator.generate([%w[x y z], %w[xxx yyyy zzz], %w[x2 y2]], header: %w[A B C], footer: %w[Q R S])
+    )
+  end
+end
+
+# noinspection RubyResolve
 class TestOutputPrinter < Test::Unit::TestCase
   def test_write_output
     orig_stdout = $stdout.clone
@@ -446,7 +511,7 @@ class TestOutputPrinter < Test::Unit::TestCase
 
   def test_write_election_report
     begin
-      OutputPrinter.write_election_report(nil, '')
+      OutputPrinter.write_election_report('', to: nil)
     rescue
       assert_true false
     else
@@ -455,9 +520,9 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     file_name = 'test_write_election_report.txt'
     OutputPrinter.write_election_report(
-      file_name,
       'This is a fake election report that needs to be seen',
-      'This is a warning that also needs to be seen'
+      to: file_name,
+      with: 'This is a warning that also needs to be seen'
     )
 
     file = File.open(file_name)
@@ -466,9 +531,9 @@ class TestOutputPrinter < Test::Unit::TestCase
     assert_true(contents.match?(/\sThis is a warning that also needs to be seen\s/m))
 
     OutputPrinter.write_election_report(
-      file_name,
       'This is a second fake election report that needs to be seen',
-      'This is a second warning that also needs to be seen'
+      to: file_name,
+      with: 'This is a second warning that also needs to be seen'
     )
 
     file = File.open(file_name)
@@ -482,66 +547,58 @@ class TestOutputPrinter < Test::Unit::TestCase
 
   def test_ballot_entry_string
     assert_equal(
-      "\t*Tom:                  100 votes (51.81%)\n",
-      OutputPrinter.ballot_entry_string('Tom', 100, 51.8134715)
+      ['*Tom', '100 votes', '51.81%'],
+      OutputPrinter.ballot_entry_values('Tom', 100, 51.8134715)
     )
     assert_equal(
-      "\t*Tom:                    4 votes (66.67%)\n",
-      OutputPrinter.ballot_entry_string('Tom', 4, 66.6666)
+      ['*Tom', '4 votes', '66.67%'],
+      OutputPrinter.ballot_entry_values('Tom', 4, 66.6666)
     )
     assert_equal(
-      "\t Allison:                1 vote  (1.00%)\n",
-      OutputPrinter.ballot_entry_string('Allison', 1, 1)
+      ['Allison', '1 vote ', '1.00%'],
+      OutputPrinter.ballot_entry_values('Allison', 1, 1)
     )
     assert_equal(
-      "\t*Allison:                1 vote  (100.00%)\n",
-      OutputPrinter.ballot_entry_string('Allison', 1, 100)
+      ['*Allison', '1 vote ', '100.00%'],
+      OutputPrinter.ballot_entry_values('Allison', 1, 100)
     )
   end
 
   def test_abstention_count_string
-    assert_equal('', OutputPrinter.abstention_count_string(1, 2))
-    assert_equal('', OutputPrinter.abstention_count_string(0, 1))
-    assert_equal("\t [Abstained]:            1 vote\n", OutputPrinter.abstention_count_string(10, 9))
-    assert_equal("\t [Abstained]:           91 votes\n", OutputPrinter.abstention_count_string(100, 9))
-    assert_equal("\t [Abstained]:         1091 votes\n", OutputPrinter.abstention_count_string(1100, 9))
-  end
-
-  def test_position_report_totals
-    assert_equal(
-      "\t [Abstained]:            1 vote\n-------------------------------------------------\n\t Total:                193 votes\n\n",
-      OutputPrinter.position_report_totals(193, 192)
-    )
-    assert_equal(
-      "\t [Abstained]:          100 votes\n-------------------------------------------------\n\t Total:                193 votes\n\n",
-      OutputPrinter.position_report_totals(193, 93)
-    )
-    assert_equal(
-      "\t [Abstained]:            1 vote\n-------------------------------------------------\n\t Total:                  1 vote\n\n",
-      OutputPrinter.position_report_totals(1, 0)
-    )
-    assert_equal(
-      "-------------------------------------------------\n\t Total:                  1 vote\n\n",
-      OutputPrinter.position_report_totals(1, 1)
-    )
-    assert_equal(
-      "-------------------------------------------------\n\t Total:               1000 votes\n\n",
-      OutputPrinter.position_report_totals(1000, 1000)
-    )
+    assert_equal([], OutputPrinter.abstention_count_values(1, 2))
+    assert_equal([], OutputPrinter.abstention_count_values(0, 1))
+    assert_equal(['[Abstained]', '1 vote '], OutputPrinter.abstention_count_values(10, 9))
+    assert_equal(['[Abstained]', '91 votes'], OutputPrinter.abstention_count_values(100, 9))
+    assert_equal(['[Abstained]', '1091 votes'], OutputPrinter.abstention_count_values(1100, 9))
   end
 
   def test_position_report_indiv
+    result = OutputPrinter.position_report_individuals(
+      1,
+      1,
+      { 'AVote3' => 1 }
+    )
+
+    expected = "+---------+---------+---------+\n" +
+      "| *AVote3 | 1 vote  | 100.00% |\n" +
+      "+=========+=========+=========+\n" +
+      "|   Total | 1 vote  |         |\n" +
+      "+---------+---------+---------+"
+    assert_equal(expected, result)
+
     result = OutputPrinter.position_report_individuals(
       6,
       5,
       { 'AVote3' => 1, 'AVote4' => 4 }
     )
 
-    expected = "\t*AVote4:                 4 votes (66.67%)\n" +
-      "\t AVote3:                 1 vote  (16.67%)\n" +
-      "\t [Abstained]:            1 vote\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes\n\n"
+    expected = "+-------------+---------+--------+\n" +
+      "|     *AVote4 | 4 votes | 66.67% |\n" +
+      "|      AVote3 | 1 vote  | 16.67% |\n" +
+      "| [Abstained] | 1 vote  |        |\n" +
+      "+=============+=========+========+\n" +
+      "|       Total | 6 votes |        |\n" +
+      "+-------------+---------+--------+"
     assert_equal(expected, result)
 
     result = OutputPrinter.position_report_individuals(
@@ -550,10 +607,12 @@ class TestOutputPrinter < Test::Unit::TestCase
       { 'AVote3' => 2, 'AVote4' => 4 }
     )
 
-    expected = "\t*AVote4:                 4 votes (66.67%)\n" +
-      "\t AVote3:                 2 votes (33.33%)\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes\n\n"
+    expected = "+---------+---------+--------+\n" +
+      "| *AVote4 | 4 votes | 66.67% |\n" +
+      "|  AVote3 | 2 votes | 33.33% |\n" +
+      "+=========+=========+========+\n" +
+      "|   Total | 6 votes |        |\n" +
+      "+---------+---------+--------+"
     assert_equal(expected, result)
 
     result = OutputPrinter.position_report_individuals(
@@ -562,11 +621,13 @@ class TestOutputPrinter < Test::Unit::TestCase
       { 'AVote3' => 2, 'AVote4' => 4 }
     )
 
-    expected = "\t AVote4:                 4 votes (0.40%)\n" +
-      "\t AVote3:                 2 votes (0.20%)\n" +
-      "\t [Abstained]:          994 votes\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:               1000 votes\n\n"
+    expected = "+-------------+------------+-------+\n" +
+      "|      AVote4 |    4 votes | 0.40% |\n" +
+      "|      AVote3 |    2 votes | 0.20% |\n" +
+      "| [Abstained] |  994 votes |       |\n" +
+      "+=============+============+=======+\n" +
+      "|       Total | 1000 votes |       |\n" +
+      "+-------------+------------+-------+"
     assert_equal(expected, result)
 
     result = OutputPrinter.position_report_individuals(
@@ -575,11 +636,13 @@ class TestOutputPrinter < Test::Unit::TestCase
       { 'AVote3' => 2, 'AVote4' => 600 }
     )
 
-    expected = "\t*AVote4:               600 votes (60.00%)\n" +
-      "\t AVote3:                 2 votes (0.20%)\n" +
-      "\t [Abstained]:          398 votes\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:               1000 votes\n\n"
+    expected = "+-------------+------------+--------+\n" +
+      "|     *AVote4 |  600 votes | 60.00% |\n" +
+      "|      AVote3 |    2 votes |  0.20% |\n" +
+      "| [Abstained] |  398 votes |        |\n" +
+      "+=============+============+========+\n" +
+      "|       Total | 1000 votes |        |\n" +
+      "+-------------+------------+--------+"
     assert_equal(expected, result)
   end
 
@@ -629,11 +692,13 @@ class TestOutputPrinter < Test::Unit::TestCase
   def test_position_report
     assert_equal(
       "President\n" +
-        "\t*AVote4:                60 votes (60.00%)\n" +
-        "\t AVote3:                20 votes (20.00%)\n" +
-        "\t [Abstained]:           20 votes\n" +
-        "-------------------------------------------------\n" +
-        "\t Total:                100 votes",
+        "+-------------+-----------+--------+\n" +
+        "|     *AVote4 |  60 votes | 60.00% |\n" +
+        "|      AVote3 |  20 votes | 20.00% |\n" +
+        "| [Abstained] |  20 votes |        |\n" +
+        "+=============+===========+========+\n" +
+        "|       Total | 100 votes |        |\n" +
+        "+-------------+-----------+--------+",
       OutputPrinter.position_report(
         100,
         'President',
@@ -643,11 +708,13 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     assert_equal(
       "President (No Majority)\n" +
-        "\t AVote3:                20 votes (20.00%)\n" +
-        "\t AVote4:                20 votes (20.00%)\n" +
-        "\t [Abstained]:           60 votes\n" +
-        "-------------------------------------------------\n" +
-        "\t Total:                100 votes",
+        "+-------------+-----------+--------+\n" +
+        "|      AVote3 |  20 votes | 20.00% |\n" +
+        "|      AVote4 |  20 votes | 20.00% |\n" +
+        "| [Abstained] |  60 votes |        |\n" +
+        "+=============+===========+========+\n" +
+        "|       Total | 100 votes |        |\n" +
+        "+-------------+-----------+--------+",
       OutputPrinter.position_report(
         100,
         'President',
@@ -657,12 +724,14 @@ class TestOutputPrinter < Test::Unit::TestCase
 
     assert_equal(
       "President (No Majority)\n" +
-        "\t AVote4:                21 votes (21.00%)\n" +
-        "\t AVote2:                20 votes (20.00%)\n" +
-        "\t AVote3:                20 votes (20.00%)\n" +
-        "\t [Abstained]:           39 votes\n" +
-        "-------------------------------------------------\n" +
-        "\t Total:                100 votes",
+        "+-------------+-----------+--------+\n" +
+        "|      AVote4 |  21 votes | 21.00% |\n" +
+        "|      AVote2 |  20 votes | 20.00% |\n" +
+        "|      AVote3 |  20 votes | 20.00% |\n" +
+        "| [Abstained] |  39 votes |        |\n" +
+        "+=============+===========+========+\n" +
+        "|       Total | 100 votes |        |\n" +
+        "+-------------+-----------+--------+",
       OutputPrinter.position_report(
         100,
         'President',
@@ -681,25 +750,33 @@ class TestOutputPrinter < Test::Unit::TestCase
     column_headers = %w[Password President VP Secretary Treasurer]
     vote_count = 6
     expected = "President\n" +
-      "\t*George Washington:      6 votes (100.00%)\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes\n\n\n" +
+      "+--------------------+---------+---------+\n" +
+      "| *George Washington | 6 votes | 100.00% |\n" +
+      "+====================+=========+=========+\n" +
+      "|              Total | 6 votes |         |\n" +
+      "+--------------------+---------+---------+\n\n" +
       "VP\n" +
-      "\t*Aaron Burr:             4 votes (66.67%)\n" +
-      "\t John Adams:             2 votes (33.33%)\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes\n\n\n" +
+      "+-------------+---------+--------+\n" +
+      "| *Aaron Burr | 4 votes | 66.67% |\n" +
+      "|  John Adams | 2 votes | 33.33% |\n" +
+      "+=============+=========+========+\n" +
+      "|       Total | 6 votes |        |\n" +
+      "+-------------+---------+--------+\n\n" +
       "Secretary (No Majority)\n" +
-      "\t Thomas Jefferson:       3 votes (50.00%)\n" +
-      "\t [Abstained]:            3 votes\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes\n\n\n" +
+      "+------------------+---------+--------+\n" +
+      "| Thomas Jefferson | 3 votes | 50.00% |\n" +
+      "|      [Abstained] | 3 votes |        |\n" +
+      "+==================+=========+========+\n" +
+      "|            Total | 6 votes |        |\n" +
+      "+------------------+---------+--------+\n\n" +
       "Treasurer (No Majority)\n" +
-      "\t Alexander Hamilton:     3 votes (50.00%)\n" +
-      "\t Someone Else:           2 votes (33.33%)\n" +
-      "\t Another Person:         1 vote  (16.67%)\n" +
-      "-------------------------------------------------\n" +
-      "\t Total:                  6 votes"
+      "+--------------------+---------+--------+\n" +
+      "| Alexander Hamilton | 3 votes | 50.00% |\n" +
+      "|       Someone Else | 2 votes | 33.33% |\n" +
+      "|     Another Person | 1 vote  | 16.67% |\n" +
+      "+====================+=========+========+\n" +
+      "|              Total | 6 votes |        |\n" +
+      "+--------------------+---------+--------+"
     assert_equal(expected, OutputPrinter.vote_report(vote_count, column_headers, vote_counts).strip)
   end
 end
