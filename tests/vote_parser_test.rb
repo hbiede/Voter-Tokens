@@ -1,5 +1,5 @@
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.2
+# Version: 1.3
 # License: MIT
 require_relative '../vote_parser'
 require_relative './helper'
@@ -330,10 +330,10 @@ class TestVoteParser < Test::Unit::TestCase
     # Standard
     vote_file = 'init_vote_test.csv'
     CSV.open(vote_file, 'w') do |f|
-      f << %w[Password President VP]
-      f << %w[abc You I]
-      f << %w[123 Me Them]
-      f << %w[fake Villain Henchman]
+      f << %w[Timestamp Password President VP]
+      f << ['4/12/2024 17:22:30', 'abc', 'You', 'I']
+      f << ['4/12/2024 17:22:30', '123', 'Me', 'Them']
+      f << ['4/12/2024 17:22:30', 'fake', 'Villain', 'Henchman']
     end
 
     token_file = 'init_token_test.csv'

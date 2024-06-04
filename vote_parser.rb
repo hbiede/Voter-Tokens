@@ -19,10 +19,24 @@ OptionParser.new do |opt|
 end.parse!
 # :nocov:
 
+# Strip timestamps from vote results
+#
+# @param [Array<Array<String>>] csv the contents of the given CSV to remove the timestamps from
+# @return [Array<Array<String>>] the file with timestamps removed
+def remove_timestamps(csv)
+  return [] if csv.nil? || csv.empty?
+
+  timestamp_index = csv[0].index { |col| col =~ /Timestamp/i }
+  timestamp_index.nil? ? csv : csv.map do |row|
+    row.delete_at timestamp_index
+    row
+  end
+end
+
 # Read the contents of the given CSV file
 #
 # @param [String] file_name The name of the file
-# @return [Array<Array<String>>]the contents of the given CSV file
+# @return [Array<Array<String>>] the contents of the given CSV file
 def read_vote_csv(file_name)
   begin
     # @type [Array<Array<String>>]
@@ -32,7 +46,7 @@ def read_vote_csv(file_name)
     exit 1
   end
   csv.delete_if { |line| line.join =~ /^\s*$/ } # delete blank lines
-  csv
+  remove_timestamps csv
 end
 
 # Parse a vote record
@@ -58,7 +72,7 @@ class VoteParser
   # Read the contents of the token file
   #
   # @param [String] file The file to read from
-  # @return [Array<Array<String>>]the contents of the token file
+  # @return [Array<Array<String>>] the contents of the token file
   def self.read_tokens(file)
     tokens = read_vote_csv file
     tokens.delete_at(0) # remove headers
