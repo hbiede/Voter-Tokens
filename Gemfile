@@ -2,7 +2,8 @@
 
 source 'https://rubygems.org'
 
-gem 'codecov', require: false, group: 'test'
 gem 'rake'
 gem 'rubocop'
+gem 'simplecov', require: false, group: 'test'
+gem 'simplecov-cobertura', require: false, group: 'test'
 gem 'test-unit', '3.4.0'
