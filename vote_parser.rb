@@ -1,23 +1,33 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.5
+# Version: 1.5.1
 # License: MIT
 
 require 'csv'
 require 'optparse'
+require 'singleton'
 
-# :nocov:
-options = { reverse: true }
-OptionParser.new do |opt|
-  opt.on(
-    '-o',
-    '--in-order',
-    TrueClass,
-    'If the votes should be counted in chronological order, keeping the first (defaults to false)'
-  ) { |o| options[:reverse] = o }
-end.parse!
-# :nocov:
+# Parses CLI flags
+class OptionHandler
+  include Singleton
+
+  def initialize
+    @options = { reverse: true }
+    OptionParser.new do |opt|
+      opt.on(
+        '-o',
+        '--in-order',
+        TrueClass,
+        'If the votes should be counted in chronological order, keeping the first (defaults to false)'
+      ) { |o| @options[:reverse] = o }
+    end.parse!
+  end
+
+  def reversed?
+    @options[:reverse]
+  end
+end
 
 # Strip timestamps from vote results
 #
@@ -109,6 +119,15 @@ class VoteParser
     end
   end
 
+  # @param [String] token The multi-voting token
+  # @param [String] school The school the token is from
+  # @return [String] the warning associated with the vote
+  def self.get_double_vote_string(token, school)
+    order_string = OptionHandler.instance.reversed? ? 'latest' : 'first'
+    format("%<ID>s (%<School>s) voted multiple times. Using %<Time>s.\n", ID: token, School: school,
+                                                                          Time: order_string)
+  end
+
   # Validate an entire ballot and parse out its component votes
   #
   # @param [Hash{Integer => Hash{String => Integer}}] vote_counts The mapping of a
@@ -119,10 +138,9 @@ class VoteParser
   # @return [String] the warning associated with the vote
   def self.validate_vote(vote_counts, used_tokens, vote, token_mapping)
     if used_tokens.include?(vote[0])
-      format("%<ID>s (%<School>s) voted multiple times. Using latest.\n", ID: vote[0], School: token_mapping[vote[0]])
-    else
+      get_double_vote_string(vote[0], token_mapping[vote[0]])
+    else # token hasn't been used. count votes
       used_tokens.store(vote[0], true)
-      # token hasn't been used. count votes
       (1...vote.length).each do |position|
         next if vote[position].nil? || vote[position].empty?
 
@@ -139,11 +157,10 @@ class VoteParser
   # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
   # @param [Hash{String => String}] token_mapping The mapping of the token onto a school
-  # @param [Boolean] reverse True iff the last vote for a token should be counted, else the first
   # @return [String] the warnings generated
-  def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping, reverse)
+  def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
     warning = ''
-    (reverse ? votes.reverse : votes).each do |vote|
+    (OptionHandler.instance.reversed? ? votes.reverse : votes).each do |vote|
       warning += if token_mapping.key?(vote[0])
                    validate_vote(vote_counts, used_tokens, vote, token_mapping)
                  else
@@ -177,17 +194,16 @@ class VoteParser
   #   rows representing individual ballots and columns representing entries votes
   #   for a given position
   # @param [Hash{String => String}] token_mapping The mapping of the token onto a school
-  # @param [Boolean] reverse True iff the last vote for a token should be counted, else the first
   # @return [Hash{Symbol=>Integer,String,Hash{Integer=>Hash{String=>Integer}}] A
   #   collection of the primary output and all warnings
-  def self.process_votes(votes, token_mapping, reverse)
+  def self.process_votes(votes, token_mapping)
     # @type [Hash{Integer=>Hash{String=>Integer}}]
     vote_counts = {}
 
     # @type [Hash{String => Boolean}]
     used_tokens = {}
 
-    warning = generate_vote_totals(vote_counts, used_tokens, votes, token_mapping, reverse)
+    warning = generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
     { TotalVoterCount: used_tokens.length, VoteCounts: vote_counts, Warning: warning }
   end
 end
@@ -449,13 +465,12 @@ end
 
 # :nocov:
 # Manage the program
-def main(opt)
+def main
   VoteParser.vote_arg_count_validator ARGV
   input = VoteParser.init(ARGV[0], ARGV[1])
   # noinspection RubyMismatchedParameterType
   # @type [Hash{Symbol=>Integer,String,Hash{Integer=>Hash{String=>Integer}}]
-  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping],
-                                              opt[:reverse])
+  processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping])
   # noinspection RubyMismatchedParameterType
   election_report = OutputPrinter.vote_report(
     processed_values[:TotalVoterCount],
@@ -465,5 +480,5 @@ def main(opt)
   OutputPrinter.write_output(election_report, processed_values[:Warning], ARGV[2])
 end
 
-main(options) if __FILE__ == $PROGRAM_NAME
+main if __FILE__ == $PROGRAM_NAME
 # :nocov:
