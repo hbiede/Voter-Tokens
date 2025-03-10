@@ -82,10 +82,8 @@ class PDFWriter
   def self.print_progress_report(index, org, number_of_orgs, longest_name_length)
     percent_done = (index + 1.0) / number_of_orgs
     filled_char_count = (14 * percent_done).floor
-    # rubocop:disable Lint/FormatParameterMismatch
     format("\r%.2f%%%% [=%s%s]: PDF generated for %-#{longest_name_length}s",
            100 * percent_done, '=' * filled_char_count, ' ' * (14 - filled_char_count), org)
-    # rubocop:enable Lint/FormatParameterMismatch
   end
 
   # Create a unique PDF for each organization with its passwords
@@ -101,8 +99,9 @@ class PDFWriter
       printf(print_progress_report(i, org, all_tokens.size, longest_org_name))
     end
     # Clear the progress bar
-    print("\rAll PDFs generated!")
+    print("\33[2K\rAll PDFs generated!\n")
 
+    system('/System/Library/Automator/Combine\ PDF\ Pages.action/Contents/MacOS/join -o pdfs/combined.pdf *.pdf')
     system('mv *.pdf pdfs/')
     system('rm *.out *.aux *.log *.tex')
     format('%<TokenCount>d PDFs generated', TokenCount: all_tokens.length)
