@@ -28,6 +28,7 @@ class OptionHandler
 
   private
 
+  # rubocop:disable Metrics/MethodLength
   def parse_options
     OptionParser.new do |opt|
       opt.on(
@@ -43,6 +44,7 @@ class OptionHandler
       ) { |o| @options[:json] = o }
     end.parse!
   end
+  # rubocop:enable Metrics/MethodLength
 end
 
 # Strip timestamps from vote results

@@ -8,7 +8,7 @@ require 'optparse'
 
 # how many characters to pad
 token_char_count = 7
-# Whether or not to generate PDFs
+# Whether to generate PDFs
 generate_pdfs = true
 # :nocov:
 OptionParser.new do |opt|
