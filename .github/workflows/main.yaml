@@ -12,11 +12,11 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: [ '3.2', '2.7' ]
+        ruby-version: ['3.2']
     steps:
       - uses: actions/checkout@v3
       - name: Set up Ruby ${{ matrix.ruby-version }}
-        uses: ruby/setup-ruby@5daca165445f0ae10478593083f72ca2625e241d
+        uses: ruby/setup-ruby@e69dcf3ded5967f30d7ef595704928d91cdae930
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
