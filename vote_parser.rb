@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.5.1
+# Version: 1.6
 # License: MIT
 
 require 'csv'
+require 'json'
 require 'optparse'
 require 'singleton'
 
@@ -13,7 +14,21 @@ class OptionHandler
   include Singleton
 
   def initialize
-    @options = { reverse: true }
+    @options = { reverse: false, json: false }
+    parse_options
+  end
+
+  def json?
+    @options[:json]
+  end
+
+  def reversed?
+    @options[:reverse]
+  end
+
+  private
+
+  def parse_options
     OptionParser.new do |opt|
       opt.on(
         '-o',
@@ -21,11 +36,12 @@ class OptionHandler
         TrueClass,
         'If the votes should be counted in chronological order, keeping the first (defaults to false)'
       ) { |o| @options[:reverse] = o }
+      opt.on(
+        '--json',
+        TrueClass,
+        'If the votes should be output as JSON (defaults to false)'
+      ) { |o| @options[:json] = o }
     end.parse!
-  end
-
-  def reversed?
-    @options[:reverse]
   end
 end
 
@@ -124,8 +140,8 @@ class VoteParser
   # @return [String] the warning associated with the vote
   def self.get_double_vote_string(token, school)
     order_string = OptionHandler.instance.reversed? ? 'latest' : 'first'
-    format("%<ID>s (%<School>s) voted multiple times. Using %<Time>s.\n", ID: token, School: school,
-                                                                          Time: order_string)
+
+    "#{token} (#{school}) voted multiple times. Using #{order_string}."
   end
 
   # Validate an entire ballot and parse out its component votes
@@ -157,18 +173,15 @@ class VoteParser
   # @param [Hash{String => Boolean}] used_tokens A collection of all the tokens already used
   # @param [Array[Array[String]]] votes The 2D array interpretation of the CSV
   # @param [Hash{String => String}] token_mapping The mapping of the token onto a school
-  # @return [String] the warnings generated
+  # @return [Array[String]] the warnings generated
   def self.generate_vote_totals(vote_counts, used_tokens, votes, token_mapping)
-    warning = ''
-    (OptionHandler.instance.reversed? ? votes.reverse : votes).each do |vote|
-      warning += if token_mapping.key?(vote[0])
-                   validate_vote(vote_counts, used_tokens, vote, token_mapping)
-                 else
-                   format("%<VoteToken>s is an invalid token. Vote not counted.\n",
-                          VoteToken: vote[0])
-                 end
-    end
-    warning
+    (OptionHandler.instance.reversed? ? votes.reverse : votes).map do |vote|
+      if token_mapping.key?(vote[0])
+        validate_vote(vote_counts, used_tokens, vote, token_mapping)
+      else
+        "#{vote[0]} is an invalid token. Vote not counted."
+      end
+    end.reject(&:empty?)
   end
 
   # Get the necessary input processed
@@ -322,23 +335,39 @@ class TableGenerator
   end
 end
 
-# Create a print out
+# Create and handle output
 class OutputPrinter
+  MESS = 'SYSTEM ERROR: method missing'
+
+  def vote_report
+    raise MESS
+  end
+
   # Write the output of the program to file if a file is given
   #
   # @param [String] election_report The main body of the report
   # @param [String?] to The file to write to
-  # @param [String?] with All warnings printed in the output
-  def self.write_election_report(election_report, to:, with: '')
+  def self.write_election_report(election_report, to:)
     return if to.nil?
 
-    File.write(to,
-               format("%<Rule>s\n%<Time>s\n%<Rule>s\n%<Warn>s\n%<Report>s\n\n",
-                      Rule: ('-' * 20), Time: Time.now.to_s, Warn: with,
-                      Report: election_report), mode: 'a')
+    File.write(to, election_report, mode: 'a')
     nil
   end
 
+  # Write the output to the console, and optionally to a file
+  #
+  # @param [String] election_report The vote report
+  # @param [String?] warning Potential warnings
+  # @param [String?] file The optional file to which to write the output
+  def self.write_output(election_report, warning, file)
+    warn warning unless warning.nil? || warning.empty?
+    puts election_report
+    OutputPrinter.write_election_report(election_report, to: file)
+  end
+end
+
+# Create a human-readable print-out
+class ReadableOutputPrinter < OutputPrinter
   # Generate values representing the vote counts for a given candidate
   #
   # @param [String] candidate_name The name of the candidate
@@ -434,50 +463,73 @@ class OutputPrinter
                                                   Individuals: individual_report)
   end
 
-  # Generate a the overall vote report
+  # Generate the overall vote report
   #
   # @param [Integer] vote_count The number of valid votes cast
   # @param [Array[String]] column_headers A listing of the column headers from the
   #   CSV (with 0 being the token)
   # @param [Hash{Integer => Hash{String => Integer}}] vote_counts The mapping of a
   #   position to a set of votes
+  # @param [Array[String]] warnings The list of warnings
   # @return [String] the vote report
-  def self.vote_report(vote_count, column_headers, vote_counts)
-    return_string = ''
-    vote_counts.each_pair do |key, position_vote_record|
-      return_string += position_report(vote_count, column_headers[key],
-                                       position_vote_record)
-    end
-    return_string
+  def self.vote_report(vote_count, column_headers, vote_counts, warnings)
+    format("%<Rule>s\n%<Time>s\n%<Rule>s\n%<Warn>s%<Report>s\n\n",
+           Rule: ('-' * 20),
+           Time: Time.now.to_s,
+           Warn: warnings.empty? ? '' : "#{warnings.join("\n")}\n",
+           Report: vote_counts.map do |key, position_vote_record|
+             position_report(vote_count, column_headers[key], position_vote_record)
+           end.join)
   end
+end
 
-  # Write the output to the console, and optionally to a file
+# Convert a vote report to a JSON output
+class JSONOutputPrinter < OutputPrinter
+  # Generate the overall vote report
   #
-  # @param [String] election_report The vote report
-  # @param [String?] warning Potential warnings
-  # @param [String?] file The optional file to which to write the output
-  def self.write_output(election_report, warning, file)
-    warn warning unless warning.nil? || warning.empty?
-    puts election_report
-    OutputPrinter.write_election_report(election_report, to: file, with: warning)
+  # @param [Integer] vote_count The number of valid votes cast
+  # @param [Array[String]] column_headers A listing of the column headers from the
+  #   CSV (with 0 being the token)
+  # @param [Hash{Integer => Hash{String => Integer}}] vote_counts The mapping of a
+  #   position to a set of votes
+  # @param [Array[String]] warnings The list of warnings
+  # @return [String] the vote report
+  def self.vote_report(vote_count, column_headers, vote_counts, warnings)
+    output_obj = { count: vote_count, positions: vote_counts.transform_keys { |key| column_headers[key] } }
+    output_obj[:warnings] = warnings unless warnings.empty?
+    JSON.pretty_generate(output_obj)
   end
+end
+
+def parse_input
+  filtered_args = ARGV.reject { |arg| arg.nil? or arg.start_with?('-') }
+  VoteParser.vote_arg_count_validator filtered_args
+
+  VoteParser.init(filtered_args[0], filtered_args[1])
+end
+
+def output_printer
+  OptionHandler.instance.json? ? JSONOutputPrinter : ReadableOutputPrinter
 end
 
 # :nocov:
 # Manage the program
 def main
-  VoteParser.vote_arg_count_validator ARGV
-  input = VoteParser.init(ARGV[0], ARGV[1])
-  # noinspection RubyMismatchedParameterType
-  # @type [Hash{Symbol=>Integer,String,Hash{Integer=>Hash{String=>Integer}}]
+  input = parse_input
+
+  # noinspection RubyMismatchedParameterType,RubyMismatchedArgumentType
+  # @type [Hash{Symbol=>Union{Integer,String,Hash{Integer=>Hash{String=>Integer}}}}]
   processed_values = VoteParser.process_votes(input[:Votes], input[:TokenMapping])
-  # noinspection RubyMismatchedParameterType
-  election_report = OutputPrinter.vote_report(
+
+  printer = output_printer
+  # noinspection RubyMismatchedParameterType,RubyMismatchedArgumentType
+  election_report = printer.vote_report(
     processed_values[:TotalVoterCount],
     input[:Cols],
-    processed_values[:VoteCounts]
+    processed_values[:VoteCounts],
+    processed_values[:Warning]
   )
-  OutputPrinter.write_output(election_report, processed_values[:Warning], ARGV[2])
+  printer.write_output(election_report, processed_values[:Warning], ARGV[2])
 end
 
 main if __FILE__ == $PROGRAM_NAME

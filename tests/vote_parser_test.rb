@@ -128,7 +128,7 @@ class TestVoteParser < Test::Unit::TestCase
                    3 => { 'Thomas Jefferson' => 1 },
                    4 => { 'Alexander Hamilton' => 1 }
                  }, vote_count)
-    assert_equal("abc (A) voted multiple times. Using latest.\n", VoteParser.validate_vote(vote_count, used_tokens, ['abc'].concat(vote), token_mapping))
+    assert_equal("abc (A) voted multiple times. Using first.", VoteParser.validate_vote(vote_count, used_tokens, ['abc'].concat(vote), token_mapping))
     assert_equal({ 'abc' => true }, used_tokens)
     assert_equal({
                    1 => { 'George Washington' => 1 },
@@ -136,7 +136,7 @@ class TestVoteParser < Test::Unit::TestCase
                    3 => { 'Thomas Jefferson' => 1 },
                    4 => { 'Alexander Hamilton' => 1 }
                  }, vote_count)
-    assert_equal("abc (A) voted multiple times. Using latest.\n", VoteParser.validate_vote(vote_count, used_tokens, ['abc'].concat(vote), token_mapping))
+    assert_equal("abc (A) voted multiple times. Using first.", VoteParser.validate_vote(vote_count, used_tokens, ['abc'].concat(vote), token_mapping))
     assert_equal({ 'abc' => true }, used_tokens)
     assert_equal({
                    1 => { 'George Washington' => 1 },
@@ -152,7 +152,7 @@ class TestVoteParser < Test::Unit::TestCase
                    3 => { 'Thomas Jefferson' => 2 },
                    4 => { 'Alexander Hamilton' => 2 }
                  }, vote_count)
-    assert_equal("bcd (B) voted multiple times. Using latest.\n", VoteParser.validate_vote(vote_count, used_tokens, ['bcd'].concat(vote), token_mapping))
+    assert_equal("bcd (B) voted multiple times. Using first.", VoteParser.validate_vote(vote_count, used_tokens, ['bcd'].concat(vote), token_mapping))
     assert_equal({ 'abc' => true, 'bcd' => true }, used_tokens)
     assert_equal({
                    1 => { 'George Washington' => 2 },
@@ -188,7 +188,7 @@ class TestVoteParser < Test::Unit::TestCase
                    4 => { 'Alexander Hamilton' => 2, 'Someone Else' => 2 }
                  }, vote_count)
 
-    assert_equal("efg (E) voted multiple times. Using latest.\n", VoteParser.validate_vote(vote_count, used_tokens, ['efg'].concat(abstain_vote), token_mapping))
+    assert_equal("efg (E) voted multiple times. Using first.", VoteParser.validate_vote(vote_count, used_tokens, ['efg'].concat(abstain_vote), token_mapping))
     assert_equal({ 'abc' => true, 'bcd' => true, 'cde' => true, 'def' => true, 'efg' => true }, used_tokens)
     assert_equal({
                    1 => { 'George Washington' => 5 },
@@ -206,7 +206,7 @@ class TestVoteParser < Test::Unit::TestCase
                    4 => { 'Alexander Hamilton' => 2, 'Someone Else' => 2 }
                  }, vote_count)
 
-    assert_equal("fgh (F) voted multiple times. Using latest.\n", VoteParser.validate_vote(vote_count, used_tokens, ['fgh'].concat(short_abstain_vote), token_mapping))
+    assert_equal("fgh (F) voted multiple times. Using first.", VoteParser.validate_vote(vote_count, used_tokens, ['fgh'].concat(short_abstain_vote), token_mapping))
     assert_equal({ 'abc' => true, 'bcd' => true, 'cde' => true, 'def' => true, 'efg' => true, 'fgh' => true }, used_tokens)
     assert_equal({
                    1 => { 'George Washington' => 6 },
@@ -218,20 +218,20 @@ class TestVoteParser < Test::Unit::TestCase
 
   def test_generate_vote_totals
     # Messages tests
-    assert_equal('', VoteParser.generate_vote_totals({}, {}, [['abc', '']], { 'abc' => 'A' }))
+    assert_equal([], VoteParser.generate_vote_totals({}, {}, [['abc', '']], { 'abc' => 'A' }))
     assert_equal(
-      "abc (A) voted multiple times. Using latest.\n",
+      ["abc (A) voted multiple times. Using first."],
       VoteParser.generate_vote_totals({}, { 'abc' => true }, [['abc', '']], { 'abc' => 'A' })
     )
     assert_equal(
-      "abc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\n",
+      ["abc (A) voted multiple times. Using first.", "abc (A) voted multiple times. Using first."],
       VoteParser.generate_vote_totals({}, { 'abc' => true }, [['abc', ''], ['abc', '']], { 'abc' => 'A' })
     )
     assert_equal(
-      "xyz is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\n",
+      ["abc (A) voted multiple times. Using first.", "abc (A) voted multiple times. Using first.", "xyz is an invalid token. Vote not counted."],
       VoteParser.generate_vote_totals({}, { 'abc' => true }, [['abc', ''], ['abc', ''], ['xyz', '']], { 'abc' => 'A' }))
     assert_equal(
-      "xyz is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\nabc (A) voted multiple times. Using latest.\nxyz2 is an invalid token. Vote not counted.\n",
+      ["xyz2 is an invalid token. Vote not counted.", "abc (A) voted multiple times. Using first.", "abc (A) voted multiple times. Using first.", "xyz is an invalid token. Vote not counted."],
       VoteParser.generate_vote_totals(
         {},
         { 'abc' => true },
@@ -239,7 +239,9 @@ class TestVoteParser < Test::Unit::TestCase
         { 'abc' => 'A' }
       )
     )
+  end
 
+  def test_generate_vote_totals_2
     # Vote Counts
     vote_counts = {}
     used_tokens = {}
@@ -249,7 +251,7 @@ class TestVoteParser < Test::Unit::TestCase
       [%w[xyz2 AVote1 BVote1], %w[abc AVote2 BVote2], %w[abc AVote3 BVote3], %w[xyz AVote4 BVote4]],
       { 'abc' => 'A' }
     )
-    assert_equal({ 1 => { 'AVote3' => 1 }, 2 => { 'BVote3' => 1 } }, vote_counts)
+    assert_equal({ 1 => { 'AVote2' => 1 }, 2 => { 'BVote2' => 1 } }, vote_counts)
     assert_equal({ 'abc' => true }, used_tokens)
 
     vote_counts = {}
@@ -262,12 +264,14 @@ class TestVoteParser < Test::Unit::TestCase
     )
     assert_equal(
       {
-        1 => { 'AVote1' => 1, 'AVote3' => 1, 'AVote4' => 1 },
-        2 => { 'BVote1' => 1, 'BVote3' => 1, 'BVote4' => 1 }
+        1 => { 'AVote1' => 1, 'AVote2' => 1, 'AVote4' => 1 },
+        2 => { 'BVote1' => 1, 'BVote2' => 1, 'BVote4' => 1 }
       },
       vote_counts)
     assert_equal({ 'abc' => true, 'xyz' => true, 'xyz2' => true }, used_tokens)
+  end
 
+  def test_generate_vote_totals_3
     vote_counts = {}
     used_tokens = {}
     warning = VoteParser.generate_vote_totals(
@@ -295,15 +299,17 @@ class TestVoteParser < Test::Unit::TestCase
         'xyz2' => 'X2'
       }
     )
-    assert_equal("fake is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\n", warning)
+    assert_equal(["abc (A) voted multiple times. Using first.", "fake is an invalid token. Vote not counted."], warning)
     assert_equal(
       {
-        1 => { 'AVote3' => 1, 'AVote4' => 5 },
-        2 => { 'BVote2' => 2, 'BVote3' => 2, 'BVote4' => 2 }
+        1 => { 'AVote2' => 1, 'AVote4' => 5 },
+        2 => { 'BVote2' => 3, 'BVote3' => 1, 'BVote4' => 2 }
       },
       vote_counts)
     assert_equal({ 'abc' => true, 'hi' => true, 'hi2' => true, 'hi3' => true, 'hi4' => true, 'xyz' => true, 'xyz2' => true }, used_tokens)
+  end
 
+  def test_generate_vote_totals_4
     vote_counts = {}
     used_tokens = {}
     VoteParser.generate_vote_totals(
@@ -314,14 +320,14 @@ class TestVoteParser < Test::Unit::TestCase
     )
     assert_equal(
       {
-        1 => { 'AVote1' => 1, 'AVote3' => 1, 'AVote4' => 1 },
-        2 => { 'BVote1' => 1, 'BVote3' => 1, 'BVote4' => 1 }
+        1 => { 'AVote1' => 1, 'AVote2' => 1, 'AVote4' => 1 },
+        2 => { 'BVote1' => 1, 'BVote2' => 1, 'BVote4' => 1 }
       },
       vote_counts)
     assert_equal({ 'abc' => true, 'xyz' => true, 'xyz2' => true }, used_tokens)
+  end
 
-    # Reset
-
+  def test_generate_vote_totals_5
     vote_counts = {}
     used_tokens = {}
     VoteParser.generate_vote_totals(
@@ -332,8 +338,8 @@ class TestVoteParser < Test::Unit::TestCase
     )
     assert_equal(
       {
-        1 => { 'AVote1' => 1, 'AVote2' => 1, 'AVote4' => 1 },
-        2 => { 'BVote1' => 1, 'BVote2' => 1, 'BVote4' => 1 }
+        1 => { 'AVote1' => 1, 'AVote3' => 1, 'AVote4' => 1 },
+        2 => { 'BVote1' => 1, 'BVote3' => 1, 'BVote4' => 1 }
       },
       vote_counts)
     assert_equal({ 'abc' => true, 'xyz' => true, 'xyz2' => true }, used_tokens)
@@ -417,11 +423,11 @@ class TestVoteParser < Test::Unit::TestCase
         'xyz2' => 'X2'
       }
     )
-    assert_equal("fake is an invalid token. Vote not counted.\nabc (A) voted multiple times. Using latest.\n", result[:Warning])
+    assert_equal(["abc (A) voted multiple times. Using first.", "fake is an invalid token. Vote not counted."], result[:Warning])
     assert_equal(
       {
-        1 => { 'AVote3' => 1, 'AVote4' => 5 },
-        2 => { 'BVote2' => 2, 'BVote3' => 2, 'BVote4' => 2 }
+        1 => { 'AVote2' => 1, 'AVote4' => 5 },
+        2 => { 'BVote2' => 3, 'BVote3' => 1, 'BVote4' => 2 }
       },
       result[:VoteCounts])
     assert_equal(7, result[:TotalVoterCount])
@@ -494,13 +500,13 @@ class TestTableGenerator < Test::Unit::TestCase
 end
 
 # noinspection RubyResolve
-class TestOutputPrinter < Test::Unit::TestCase
+class TestReadableOutputPrinter < Test::Unit::TestCase
   def test_write_output
     orig_stdout = $stdout.clone
     $stdout = File.new(File::NULL, 'w')
 
     begin
-      OutputPrinter.write_output('REPORT', 'WARNING', nil)
+      ReadableOutputPrinter.write_output('REPORT', 'WARNING', nil)
     rescue
       assert_true false
     else
@@ -508,14 +514,14 @@ class TestOutputPrinter < Test::Unit::TestCase
     end
 
     file_name = 'test_write_election_report.txt'
-    OutputPrinter.write_output(
+    ReadableOutputPrinter.write_output(
       'This is a fake election report that needs to be seen',
       nil,
       file_name
     )
     file = File.open(file_name)
     contents = file.read
-    assert_true(contents.match?(/\sThis is a fake election report that needs to be seen\s/m))
+    assert_true(contents.include?("This is a fake election report that needs to be seen"))
     File.delete file
   ensure
     $stdout = orig_stdout
@@ -523,7 +529,7 @@ class TestOutputPrinter < Test::Unit::TestCase
 
   def test_write_election_report
     begin
-      OutputPrinter.write_election_report('', to: nil)
+      ReadableOutputPrinter.write_election_report('', to: nil)
     rescue
       assert_true false
     else
@@ -531,61 +537,56 @@ class TestOutputPrinter < Test::Unit::TestCase
     end
 
     file_name = 'test_write_election_report.txt'
-    OutputPrinter.write_election_report(
+    ReadableOutputPrinter.write_election_report(
       'This is a fake election report that needs to be seen',
-      to: file_name,
-      with: 'This is a warning that also needs to be seen'
+      to: file_name
     )
 
     file = File.open(file_name)
     contents = file.read
-    assert_true(contents.match?(/\sThis is a fake election report that needs to be seen\s/m))
-    assert_true(contents.match?(/\sThis is a warning that also needs to be seen\s/m))
+    assert_true(contents.include?("This is a fake election report that needs to be seen"))
 
-    OutputPrinter.write_election_report(
+    ReadableOutputPrinter.write_election_report(
       'This is a second fake election report that needs to be seen',
-      to: file_name,
-      with: 'This is a second warning that also needs to be seen'
+      to: file_name
     )
 
     file = File.open(file_name)
     contents = file.read
-    assert_true(contents.match?(/\sThis is a fake election report that needs to be seen\s/m))
-    assert_true(contents.match?(/\sThis is a warning that also needs to be seen\s/m))
-    assert_true(contents.match?(/\sThis is a second fake election report that needs to be seen\s/m))
-    assert_true(contents.match?(/\sThis is a second warning that also needs to be seen\s/m))
+    assert_true(contents.include?("This is a fake election report that needs to be seen"))
+    assert_true(contents.include?("This is a second fake election report that needs to be seen"))
     File.delete file
   end
 
   def test_ballot_entry_string
     assert_equal(
       ['*Tom', '100 votes', '51.81%'],
-      OutputPrinter.ballot_entry_values('Tom', 100, 51.8134715)
+      ReadableOutputPrinter.ballot_entry_values('Tom', 100, 51.8134715)
     )
     assert_equal(
       ['*Tom', '4 votes', '66.67%'],
-      OutputPrinter.ballot_entry_values('Tom', 4, 66.6666)
+      ReadableOutputPrinter.ballot_entry_values('Tom', 4, 66.6666)
     )
     assert_equal(
       ['Allison', '1 vote ', '1.00%'],
-      OutputPrinter.ballot_entry_values('Allison', 1, 1)
+      ReadableOutputPrinter.ballot_entry_values('Allison', 1, 1)
     )
     assert_equal(
       ['*Allison', '1 vote ', '100.00%'],
-      OutputPrinter.ballot_entry_values('Allison', 1, 100)
+      ReadableOutputPrinter.ballot_entry_values('Allison', 1, 100)
     )
   end
 
   def test_abstention_count_string
-    assert_equal([], OutputPrinter.abstention_count_values(1, 2))
-    assert_equal([], OutputPrinter.abstention_count_values(0, 1))
-    assert_equal(['[Abstained]', '1 vote '], OutputPrinter.abstention_count_values(10, 9))
-    assert_equal(['[Abstained]', '91 votes'], OutputPrinter.abstention_count_values(100, 9))
-    assert_equal(['[Abstained]', '1091 votes'], OutputPrinter.abstention_count_values(1100, 9))
+    assert_equal([], ReadableOutputPrinter.abstention_count_values(1, 2))
+    assert_equal([], ReadableOutputPrinter.abstention_count_values(0, 1))
+    assert_equal(['[Abstained]', '1 vote '], ReadableOutputPrinter.abstention_count_values(10, 9))
+    assert_equal(['[Abstained]', '91 votes'], ReadableOutputPrinter.abstention_count_values(100, 9))
+    assert_equal(['[Abstained]', '1091 votes'], ReadableOutputPrinter.abstention_count_values(1100, 9))
   end
 
   def test_position_report_indiv
-    result = OutputPrinter.position_report_individuals(
+    result = ReadableOutputPrinter.position_report_individuals(
       1,
       1,
       { 'AVote3' => 1 }
@@ -598,7 +599,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "+---------+---------+---------+"
     assert_equal(expected, result)
 
-    result = OutputPrinter.position_report_individuals(
+    result = ReadableOutputPrinter.position_report_individuals(
       6,
       5,
       { 'AVote3' => 1, 'AVote4' => 4 }
@@ -613,7 +614,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "+-------------+---------+--------+"
     assert_equal(expected, result)
 
-    result = OutputPrinter.position_report_individuals(
+    result = ReadableOutputPrinter.position_report_individuals(
       6,
       6,
       { 'AVote3' => 2, 'AVote4' => 4 }
@@ -627,7 +628,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "+---------+---------+--------+"
     assert_equal(expected, result)
 
-    result = OutputPrinter.position_report_individuals(
+    result = ReadableOutputPrinter.position_report_individuals(
       1000,
       6,
       { 'AVote3' => 2, 'AVote4' => 4 }
@@ -642,7 +643,7 @@ class TestOutputPrinter < Test::Unit::TestCase
       "+-------------+------------+-------+"
     assert_equal(expected, result)
 
-    result = OutputPrinter.position_report_individuals(
+    result = ReadableOutputPrinter.position_report_individuals(
       1000,
       602,
       { 'AVote3' => 2, 'AVote4' => 600 }
@@ -659,19 +660,19 @@ class TestOutputPrinter < Test::Unit::TestCase
   end
 
   def test_sum_position_votes
-    assert_equal(602, OutputPrinter.sum_position_votes({ 'AVote3' => 2, 'AVote4' => 600 }))
-    assert_equal(800, OutputPrinter.sum_position_votes({ 'AVote3' => 200, 'AVote4' => 600 }))
-    assert_equal(0, OutputPrinter.sum_position_votes({ 'AVote3' => 0, 'AVote4' => 0 }))
-    assert_equal(0, OutputPrinter.sum_position_votes({}))
+    assert_equal(602, ReadableOutputPrinter.sum_position_votes({ 'AVote3' => 2, 'AVote4' => 600 }))
+    assert_equal(800, ReadableOutputPrinter.sum_position_votes({ 'AVote3' => 200, 'AVote4' => 600 }))
+    assert_equal(0, ReadableOutputPrinter.sum_position_votes({ 'AVote3' => 0, 'AVote4' => 0 }))
+    assert_equal(0, ReadableOutputPrinter.sum_position_votes({}))
     assert_equal(
       1204,
-      OutputPrinter.sum_position_votes(
+      ReadableOutputPrinter.sum_position_votes(
         { 'AVote1' => 2, 'AVote2' => 600, 'AVote3' => 2, 'AVote4' => 600 }
       )
     )
     assert_equal(
       1400,
-      OutputPrinter.sum_position_votes(
+      ReadableOutputPrinter.sum_position_votes(
         {
           'AVote1' => 2,
           'AVote2' => 600,
@@ -686,19 +687,19 @@ class TestOutputPrinter < Test::Unit::TestCase
   end
 
   def test_majority_reached
-    assert_true(OutputPrinter.majority_reached?(100, { 'AVote3' => 20, 'AVote4' => 60 }))
-    assert_true(OutputPrinter.majority_reached?(100, { 'AVote4' => 100 }))
-    assert_true(OutputPrinter.majority_reached?(100, { 'AVote3' => 49, 'AVote4' => 51 }))
-    assert_true(OutputPrinter.majority_reached?(100, { 'AVote3' => 99, 'AVote4' => 1 }))
-    assert_true(OutputPrinter.majority_reached?(1, { 'AVote3' => 0, 'AVote4' => 1 }))
-    assert_true(OutputPrinter.majority_reached?(3, { 'AVote3' => 2, 'AVote4' => 1 }))
-    assert_true(OutputPrinter.majority_reached?(100, { 'AVote1' => 2, 'AVote2' => 2, 'AVote3' => 2, 'AVote4' => 1, 'AVote5' => 1, 'AVote6' => 1, 'AVote7' => 1, 'AVote8' => 90 }))
-    assert_true(OutputPrinter.majority_reached?(1, { 'AVote1' => 1 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(100, { 'AVote3' => 20, 'AVote4' => 60 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(100, { 'AVote4' => 100 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(100, { 'AVote3' => 49, 'AVote4' => 51 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(100, { 'AVote3' => 99, 'AVote4' => 1 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(1, { 'AVote3' => 0, 'AVote4' => 1 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(3, { 'AVote3' => 2, 'AVote4' => 1 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(100, { 'AVote1' => 2, 'AVote2' => 2, 'AVote3' => 2, 'AVote4' => 1, 'AVote5' => 1, 'AVote6' => 1, 'AVote7' => 1, 'AVote8' => 90 }))
+    assert_true(ReadableOutputPrinter.majority_reached?(1, { 'AVote1' => 1 }))
 
-    assert_false(OutputPrinter.majority_reached?(100, { 'AVote1' => 2, 'AVote2' => 2, 'AVote3' => 2, 'AVote4' => 1, 'AVote5' => 1, 'AVote6' => 1, 'AVote7' => 1, 'AVote8' => 9 }))
-    assert_false(OutputPrinter.majority_reached?(100, {}))
-    assert_false(OutputPrinter.majority_reached?(0, {}))
-    assert_false(OutputPrinter.majority_reached?(2, { 'AVote1' => 1 }))
+    assert_false(ReadableOutputPrinter.majority_reached?(100, { 'AVote1' => 2, 'AVote2' => 2, 'AVote3' => 2, 'AVote4' => 1, 'AVote5' => 1, 'AVote6' => 1, 'AVote7' => 1, 'AVote8' => 9 }))
+    assert_false(ReadableOutputPrinter.majority_reached?(100, {}))
+    assert_false(ReadableOutputPrinter.majority_reached?(0, {}))
+    assert_false(ReadableOutputPrinter.majority_reached?(2, { 'AVote1' => 1 }))
   end
 
   def test_position_report
@@ -711,7 +712,7 @@ class TestOutputPrinter < Test::Unit::TestCase
         "+=============+===========+========+\n" +
         "|       Total | 100 votes |        |\n" +
         "+-------------+-----------+--------+",
-      OutputPrinter.position_report(
+      ReadableOutputPrinter.position_report(
         100,
         'President',
         { 'AVote3' => 20, 'AVote4' => 60 }
@@ -727,7 +728,7 @@ class TestOutputPrinter < Test::Unit::TestCase
         "+=============+===========+========+\n" +
         "|       Total | 100 votes |        |\n" +
         "+-------------+-----------+--------+",
-      OutputPrinter.position_report(
+      ReadableOutputPrinter.position_report(
         100,
         'President',
         { 'AVote4' => 20, 'AVote3' => 20 }
@@ -744,7 +745,7 @@ class TestOutputPrinter < Test::Unit::TestCase
         "+=============+===========+========+\n" +
         "|       Total | 100 votes |        |\n" +
         "+-------------+-----------+--------+",
-      OutputPrinter.position_report(
+      ReadableOutputPrinter.position_report(
         100,
         'President',
         { 'AVote2' => 20, 'AVote3' => 20, 'AVote4' => 21 }
@@ -789,6 +790,6 @@ class TestOutputPrinter < Test::Unit::TestCase
       "+====================+=========+========+\n" +
       "|              Total | 6 votes |        |\n" +
       "+--------------------+---------+--------+"
-    assert_equal(expected, OutputPrinter.vote_report(vote_count, column_headers, vote_counts).strip)
+    assert_true(ReadableOutputPrinter.vote_report(vote_count, column_headers, vote_counts, []).strip.end_with?(expected))
   end
 end
